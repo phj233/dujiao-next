@@ -15,6 +15,7 @@ const (
 const (
 	FulfillmentTypeAuto        = "auto"
 	FulfillmentTypeManual      = "manual"
+	FulfillmentTypeUpstream    = "upstream"
 	FulfillmentStatusPending   = "pending"
 	FulfillmentStatusDelivered = "delivered"
 )
@@ -281,6 +282,66 @@ const (
 	TaskWalletRechargeExpire        = "wallet_recharge:timeout_expire"
 	TaskNotificationDispatch        = "notification:dispatch"
 	TaskAffiliateConfirmCommissions = "affiliate:confirm_commissions"
+	TaskProcurementSubmit           = "procurement:submit"
+	TaskProcurementPollStatus       = "procurement:poll_status"
+	TaskUpstreamSyncProducts        = "upstream:sync_products"
+	TaskUpstreamSyncStock           = "upstream:sync_stock"
+	TaskReconciliationRun           = "reconciliation:run"
+	TaskDownstreamCallback          = "downstream:callback"
+)
+
+// 采购单状态常量
+const (
+	ProcurementStatusPending   = "pending"
+	ProcurementStatusSubmitted = "submitted"
+	ProcurementStatusAccepted  = "accepted"
+	ProcurementStatusRejected  = "rejected"
+	ProcurementStatusFailed    = "failed"
+	ProcurementStatusFulfilled = "fulfilled"
+	ProcurementStatusCompleted = "completed"
+	ProcurementStatusCanceled  = "canceled"
+)
+
+// 对接连接状态常量
+const (
+	ConnectionStatusPending  = "pending"
+	ConnectionStatusActive   = "active"
+	ConnectionStatusDisabled = "disabled"
+)
+
+// 对接协议类型常量
+const (
+	ConnectionProtocolDujiaoNext = "dujiao-next"
+)
+
+// API 凭证状态常量
+const (
+	ApiCredentialStatusPendingReview = "pending_review"
+	ApiCredentialStatusApproved      = "approved"
+	ApiCredentialStatusRejected      = "rejected"
+	ApiCredentialStatusDisabled      = "disabled"
+)
+
+// 下游回调状态常量
+const (
+	CallbackStatusPending = "callback_pending"
+	CallbackStatusSent    = "callback_sent"
+	CallbackStatusFailed  = "callback_failed"
+)
+
+// 对账类型常量
+const (
+	ReconciliationTypeStatus = "status"
+	ReconciliationTypeAmount = "amount"
+	ReconciliationTypeFull   = "full"
+)
+
+// 对账任务状态常量
+const (
+	ReconciliationJobStatusPending   = "pending"
+	ReconciliationJobStatusRunning   = "running"
+	ReconciliationJobStatusCompleted = "completed"
+	ReconciliationJobStatusFailed    = "failed"
 )
 
 // 缓存默认配置常量

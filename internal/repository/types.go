@@ -6,6 +6,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// Pagination 通用分页参数
+type Pagination struct {
+	Page     int
+	PageSize int
+}
+
 // ProductListFilter 查询商品列表的过滤条件
 type ProductListFilter struct {
 	Page              int

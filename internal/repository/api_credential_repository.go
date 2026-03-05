@@ -1,0 +1,113 @@
+package repository
+
+import (
+	"errors"
+
+	"github.com/dujiao-next/internal/models"
+
+	"gorm.io/gorm"
+)
+
+// ApiCredentialRepository API 凭证数据访问接口
+type ApiCredentialRepository interface {
+	GetByID(id uint) (*models.ApiCredential, error)
+	GetByUserID(userID uint) (*models.ApiCredential, error)
+	GetByApiKey(apiKey string) (*models.ApiCredential, error)
+	Create(cred *models.ApiCredential) error
+	Update(cred *models.ApiCredential) error
+	Delete(id uint) error
+	List(filter ApiCredentialListFilter) ([]models.ApiCredential, int64, error)
+}
+
+// ApiCredentialListFilter 凭证列表筛选
+type ApiCredentialListFilter struct {
+	Status string
+	Pagination
+}
+
+// GormApiCredentialRepository GORM 实现
+type GormApiCredentialRepository struct {
+	db *gorm.DB
+}
+
+// NewApiCredentialRepository 创建凭证仓库
+func NewApiCredentialRepository(db *gorm.DB) *GormApiCredentialRepository {
+	return &GormApiCredentialRepository{db: db}
+}
+
+// GetByID 根据 ID 获取
+func (r *GormApiCredentialRepository) GetByID(id uint) (*models.ApiCredential, error) {
+	var cred models.ApiCredential
+	if err := r.db.First(&cred, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &cred, nil
+}
+
+// GetByUserID 根据用户 ID 获取
+func (r *GormApiCredentialRepository) GetByUserID(userID uint) (*models.ApiCredential, error) {
+	var cred models.ApiCredential
+	if err := r.db.Where("user_id = ?", userID).First(&cred).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &cred, nil
+}
+
+// GetByApiKey 根据 API Key 获取
+func (r *GormApiCredentialRepository) GetByApiKey(apiKey string) (*models.ApiCredential, error) {
+	var cred models.ApiCredential
+	if err := r.db.Where("api_key = ?", apiKey).First(&cred).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &cred, nil
+}
+
+// Create 创建凭证
+func (r *GormApiCredentialRepository) Create(cred *models.ApiCredential) error {
+	return r.db.Create(cred).Error
+}
+
+// Update 更新凭证
+func (r *GormApiCredentialRepository) Update(cred *models.ApiCredential) error {
+	return r.db.Save(cred).Error
+}
+
+// Delete 软删除凭证
+func (r *GormApiCredentialRepository) Delete(id uint) error {
+	return r.db.Delete(&models.ApiCredential{}, id).Error
+}
+
+// List 列表查询
+func (r *GormApiCredentialRepository) List(filter ApiCredentialListFilter) ([]models.ApiCredential, int64, error) {
+	var creds []models.ApiCredential
+	var total int64
+
+	q := r.db.Model(&models.ApiCredential{})
+	if filter.Status != "" {
+		q = q.Where("status = ?", filter.Status)
+	}
+
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q = q.Order("created_at DESC")
+	if filter.Page > 0 && filter.PageSize > 0 {
+		q = q.Offset((filter.Page - 1) * filter.PageSize).Limit(filter.PageSize)
+	}
+
+	if err := q.Find(&creds).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return creds, total, nil
+}

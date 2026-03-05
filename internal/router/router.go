@@ -135,7 +135,29 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 			user.GET("/affiliate/commissions", publicHandler.ListAffiliateCommissions)
 			user.GET("/affiliate/withdraws", publicHandler.ListAffiliateWithdraws)
 			user.POST("/affiliate/withdraws", publicHandler.ApplyAffiliateWithdraw)
+
+			// API 对接权限（用户中心）
+			user.GET("/api-credential", publicHandler.GetMyApiCredential)
+			user.POST("/api-credential/apply", publicHandler.ApplyApiCredential)
+			user.POST("/api-credential/regenerate", publicHandler.RegenerateMyApiCredential)
+			user.PUT("/api-credential/status", publicHandler.UpdateMyApiCredentialStatus)
 		}
+
+		// 上游 API（本站作为 B 站点，暴露给下游 A 调用）
+		upstreamAPI := apiV1.Group("/upstream")
+		upstreamAPI.Use(UpstreamAPIAuthMiddleware(c.ApiCredentialRepo))
+		{
+			upstreamAPI.POST("/ping", func(ctx *gin.Context) {
+				// Phase 3 实现
+				UpstreamSuccessResponse(ctx, gin.H{"ok": true, "protocol_version": "1.0"})
+			})
+		}
+
+		// 上游回调接收（本站作为 A 站点，接收 B 的回调）
+		apiV1.POST("/upstream/callback", func(ctx *gin.Context) {
+			// Phase 3 实现
+			UpstreamCallbackResponse(ctx, true, "received")
+		})
 
 		apiV1.POST("/payments/callback", publicHandler.PaymentCallback)
 		apiV1.GET("/payments/callback", publicHandler.PaymentCallback)
@@ -284,6 +306,14 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 				authorized.GET("/users/:id/wallet/transactions", adminHandler.GetAdminUserWalletTransactions)
 				authorized.POST("/users/:id/wallet/adjust", adminHandler.AdjustAdminUserWallet)
 				authorized.GET("/wallet/recharges", adminHandler.GetAdminWalletRecharges)
+
+				// API 凭证审核管理
+				authorized.GET("/api-credentials", adminHandler.GetApiCredentials)
+				authorized.GET("/api-credentials/:id", adminHandler.GetApiCredential)
+				authorized.POST("/api-credentials/:id/approve", adminHandler.ApproveApiCredential)
+				authorized.POST("/api-credentials/:id/reject", adminHandler.RejectApiCredential)
+				authorized.PUT("/api-credentials/:id/status", adminHandler.UpdateApiCredentialStatus)
+				authorized.DELETE("/api-credentials/:id", adminHandler.DeleteApiCredential)
 			}
 		}
 	}

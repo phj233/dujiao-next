@@ -109,6 +109,14 @@ func AutoMigrate() error {
 		&Post{},
 		&Banner{},
 		&Setting{},
+		&ApiCredential{},
+		&SiteConnection{},
+		&ProductMapping{},
+		&SKUMapping{},
+		&ProcurementOrder{},
+		&DownstreamOrderRef{},
+		&ReconciliationJob{},
+		&ReconciliationItem{},
 	); err != nil {
 		return err
 	}

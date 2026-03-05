@@ -1,0 +1,132 @@
+package upstream
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/dujiao-next/internal/constants"
+	"github.com/dujiao-next/internal/models"
+)
+
+// PingResult 连接测试结果
+type PingResult struct {
+	SiteName        string `json:"site_name"`
+	ProtocolVersion string `json:"protocol_version"`
+	UserID          uint   `json:"user_id"`
+	Balance         string `json:"balance"`
+	Currency        string `json:"currency"`
+}
+
+// ListProductsOpts 商品列表参数
+type ListProductsOpts struct {
+	Page         int
+	PageSize     int
+	UpdatedAfter *time.Time
+}
+
+// ProductListResult 商品列表结果
+type ProductListResult struct {
+	Total int               `json:"total"`
+	Items []UpstreamProduct `json:"items"`
+}
+
+// UpstreamProduct 上游商品信息
+type UpstreamProduct struct {
+	ID               uint          `json:"id"`
+	Title            models.JSON   `json:"title"`
+	Description      models.JSON   `json:"description"`
+	Content          models.JSON   `json:"content"`
+	Images           []string      `json:"images"`
+	Tags             []string      `json:"tags"`
+	PriceAmount      string        `json:"price_amount"`
+	Currency         string        `json:"currency"`
+	FulfillmentType  string        `json:"fulfillment_type"`
+	ManualFormSchema models.JSON   `json:"manual_form_schema"`
+	IsActive         bool          `json:"is_active"`
+	SKUs             []UpstreamSKU `json:"skus"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+// UpstreamSKU 上游 SKU 信息
+type UpstreamSKU struct {
+	ID          uint        `json:"id"`
+	SKUCode     string      `json:"sku_code"`
+	SpecValues  models.JSON `json:"spec_values"`
+	PriceAmount string      `json:"price_amount"`
+	StockStatus string      `json:"stock_status"`
+	IsActive    bool        `json:"is_active"`
+}
+
+// CreateUpstreamOrderReq 创建上游采购单请求
+type CreateUpstreamOrderReq struct {
+	SKUID             uint        `json:"sku_id"`
+	Quantity          int         `json:"quantity"`
+	ManualFormData    models.JSON `json:"manual_form_data,omitempty"`
+	DownstreamOrderNo string      `json:"downstream_order_no"`
+	TraceID           string      `json:"trace_id"`
+	CallbackURL       string      `json:"callback_url"`
+}
+
+// CreateUpstreamOrderResp 创建上游采购单响应
+type CreateUpstreamOrderResp struct {
+	OK           bool   `json:"ok"`
+	OrderID      uint   `json:"order_id,omitempty"`
+	OrderNo      string `json:"order_no,omitempty"`
+	Status       string `json:"status,omitempty"`
+	Amount       string `json:"amount,omitempty"`
+	Currency     string `json:"currency,omitempty"`
+	ErrorCode    string `json:"error_code,omitempty"`
+	ErrorMessage string `json:"error_message,omitempty"`
+}
+
+// UpstreamFulfillment 上游交付信息
+type UpstreamFulfillment struct {
+	Type         string      `json:"type"`
+	Status       string      `json:"status"`
+	Payload      string      `json:"payload"`
+	DeliveryData models.JSON `json:"delivery_data"`
+	DeliveredAt  *time.Time  `json:"delivered_at,omitempty"`
+}
+
+// UpstreamOrderDetail 上游订单详情
+type UpstreamOrderDetail struct {
+	OrderID     uint                 `json:"order_id"`
+	OrderNo     string               `json:"order_no"`
+	Status      string               `json:"status"`
+	Fulfillment *UpstreamFulfillment `json:"fulfillment,omitempty"`
+}
+
+// Adapter 上游站点适配器接口
+type Adapter interface {
+	// Ping 连接测试
+	Ping(ctx context.Context) (*PingResult, error)
+
+	// ListProducts 拉取上游商品列表
+	ListProducts(ctx context.Context, opts ListProductsOpts) (*ProductListResult, error)
+
+	// GetProduct 获取单个商品详情
+	GetProduct(ctx context.Context, productID uint) (*UpstreamProduct, error)
+
+	// CreateOrder 发起采购单
+	CreateOrder(ctx context.Context, req CreateUpstreamOrderReq) (*CreateUpstreamOrderResp, error)
+
+	// GetOrder 查询上游订单状态
+	GetOrder(ctx context.Context, orderID uint) (*UpstreamOrderDetail, error)
+
+	// CancelOrder 取消采购单
+	CancelOrder(ctx context.Context, orderID uint) error
+
+	// DownloadImage 下载图片到本地
+	DownloadImage(ctx context.Context, imageURL string) (localPath string, err error)
+}
+
+// NewAdapter 根据协议类型创建适配器
+func NewAdapter(conn *models.SiteConnection, uploadsDir string) (Adapter, error) {
+	switch conn.Protocol {
+	case constants.ConnectionProtocolDujiaoNext:
+		return NewDujiaoNextAdapter(conn, uploadsDir), nil
+	default:
+		return nil, fmt.Errorf("unsupported protocol: %s", conn.Protocol)
+	}
+}

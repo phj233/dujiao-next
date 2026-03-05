@@ -43,6 +43,8 @@ type Container struct {
 	AuthzAuditLogRepo     repository.AuthzAuditLogRepository
 	DashboardRepo         repository.DashboardRepository
 	AffiliateRepo         repository.AffiliateRepository
+	ApiCredentialRepo     repository.ApiCredentialRepository
+	SiteConnectionRepo    repository.SiteConnectionRepository
 
 	// Services
 	AuthzService          *authz.Service
@@ -71,6 +73,7 @@ type Container struct {
 	DashboardService      *service.DashboardService
 	NotificationService   *service.NotificationService
 	AffiliateService      *service.AffiliateService
+	ApiCredentialService  *service.ApiCredentialService
 }
 
 // NewContainer 初始化容器
@@ -133,6 +136,8 @@ func (c *Container) initRepositories() {
 	c.AuthzAuditLogRepo = repository.NewAuthzAuditLogRepository(db)
 	c.DashboardRepo = repository.NewDashboardRepository(db)
 	c.AffiliateRepo = repository.NewAffiliateRepository(db)
+	c.ApiCredentialRepo = repository.NewApiCredentialRepository(db)
+	c.SiteConnectionRepo = repository.NewSiteConnectionRepository(db)
 }
 
 func (c *Container) initServices() {
@@ -205,6 +210,7 @@ func (c *Container) initServices() {
 	c.AuthzAuditService = service.NewAuthzAuditService(c.AuthzAuditLogRepo)
 	c.DashboardService = service.NewDashboardService(c.DashboardRepo, c.SettingService)
 	c.NotificationService = service.NewNotificationService(c.SettingService, c.EmailService, c.QueueClient, c.DashboardService, c.Config.TelegramAuth)
+	c.ApiCredentialService = service.NewApiCredentialService(c.ApiCredentialRepo)
 	c.PaymentService = service.NewPaymentService(service.PaymentServiceOptions{
 		OrderRepo:           c.OrderRepo,
 		ProductRepo:         c.ProductRepo,
