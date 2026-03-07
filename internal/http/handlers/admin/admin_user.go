@@ -177,7 +177,7 @@ func (h *Handler) UpdateAdminUser(c *gin.Context) {
 
 	var req UpdateAdminUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -396,7 +396,7 @@ func decodeScopeRefIDs(raw string) []uint {
 func (h *Handler) BatchUpdateUserStatus(c *gin.Context) {
 	var req BatchUpdateUserStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	if len(req.UserIDs) == 0 {

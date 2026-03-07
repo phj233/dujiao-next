@@ -54,7 +54,7 @@ func (h *Handler) CreateCardSecretBatch(c *gin.Context) {
 	}
 	var req CreateCardSecretBatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -215,7 +215,7 @@ func (h *Handler) UpdateCardSecret(c *gin.Context) {
 
 	var req UpdateCardSecretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -254,7 +254,7 @@ func (h *Handler) UpdateCardSecret(c *gin.Context) {
 func (h *Handler) BatchUpdateCardSecretStatus(c *gin.Context) {
 	var req BatchUpdateCardSecretStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -280,7 +280,7 @@ func (h *Handler) BatchUpdateCardSecretStatus(c *gin.Context) {
 func (h *Handler) BatchDeleteCardSecrets(c *gin.Context) {
 	var req BatchDeleteCardSecretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -306,7 +306,7 @@ func (h *Handler) BatchDeleteCardSecrets(c *gin.Context) {
 func (h *Handler) ExportCardSecrets(c *gin.Context) {
 	var req ExportCardSecretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

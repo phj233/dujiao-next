@@ -25,7 +25,7 @@ func (h *Handler) GetCaptchaSettings(c *gin.Context) {
 func (h *Handler) UpdateCaptchaSettings(c *gin.Context) {
 	var req service.CaptchaSettingPatch
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

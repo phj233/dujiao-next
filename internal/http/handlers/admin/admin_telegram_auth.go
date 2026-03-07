@@ -25,7 +25,7 @@ func (h *Handler) GetTelegramAuthSettings(c *gin.Context) {
 func (h *Handler) UpdateTelegramAuthSettings(c *gin.Context) {
 	var req service.TelegramAuthSettingPatch
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

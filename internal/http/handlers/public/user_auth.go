@@ -26,7 +26,7 @@ type UserSendVerifyCodeRequest struct {
 func (h *Handler) SendUserVerifyCode(c *gin.Context) {
 	var req UserSendVerifyCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -96,7 +96,7 @@ type UserRegisterRequest struct {
 func (h *Handler) UserRegister(c *gin.Context) {
 	var req UserRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -340,7 +340,7 @@ type UserResetPasswordRequest struct {
 func (h *Handler) UserForgotPassword(c *gin.Context) {
 	var req UserResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -432,7 +432,7 @@ func (h *Handler) BindMyTelegram(c *gin.Context) {
 	}
 	var req UserBindTelegramRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	identity, err := h.UserAuthService.BindTelegram(service.BindTelegramInput{
@@ -545,7 +545,7 @@ func (h *Handler) UpdateUserProfile(c *gin.Context) {
 
 	var req UserProfileUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -585,7 +585,7 @@ func (h *Handler) SendChangeEmailCode(c *gin.Context) {
 
 	var req ChangeEmailSendCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -632,7 +632,7 @@ func (h *Handler) ChangeEmail(c *gin.Context) {
 
 	var req ChangeEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -682,7 +682,7 @@ func (h *Handler) ChangeUserPassword(c *gin.Context) {
 
 	var req ChangeUserPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

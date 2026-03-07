@@ -26,7 +26,7 @@ func (h *Handler) RedeemGiftCard(c *gin.Context) {
 	}
 	var req RedeemGiftCardRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

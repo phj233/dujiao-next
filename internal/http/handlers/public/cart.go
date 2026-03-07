@@ -117,7 +117,7 @@ func (h *Handler) UpsertCartItem(c *gin.Context) {
 	}
 	var req CartItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	if req.Quantity <= 0 {

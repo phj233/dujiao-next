@@ -31,7 +31,7 @@ type CreatePromotionRequest struct {
 func (h *Handler) CreatePromotion(c *gin.Context) {
 	var req CreatePromotionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *Handler) UpdatePromotion(c *gin.Context) {
 	}
 	var req CreatePromotionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

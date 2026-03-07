@@ -103,7 +103,7 @@ func (h *Handler) ListAuthzAdmins(c *gin.Context) {
 func (h *Handler) CreateAuthzRole(c *gin.Context) {
 	var req authzRolePayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (h *Handler) GetAuthzRolePolicies(c *gin.Context) {
 func (h *Handler) GrantAuthzPolicy(c *gin.Context) {
 	var req authzPolicyPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -222,7 +222,7 @@ func (h *Handler) GrantAuthzPolicy(c *gin.Context) {
 func (h *Handler) RevokeAuthzPolicy(c *gin.Context) {
 	var req authzPolicyPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -293,7 +293,7 @@ func (h *Handler) SetAuthzAdminRoles(c *gin.Context) {
 
 	var req authzSetAdminRolesPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

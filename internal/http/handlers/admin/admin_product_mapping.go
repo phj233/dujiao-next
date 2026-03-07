@@ -79,7 +79,7 @@ type ImportUpstreamProductRequest struct {
 func (h *Handler) ImportUpstreamProduct(c *gin.Context) {
 	var req ImportUpstreamProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -131,7 +131,7 @@ type BatchImportUpstreamProductResult struct {
 func (h *Handler) BatchImportUpstreamProducts(c *gin.Context) {
 	var req BatchImportUpstreamProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -199,7 +199,7 @@ func (h *Handler) UpdateProductMappingStatus(c *gin.Context) {
 
 	var req UpdateProductMappingStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

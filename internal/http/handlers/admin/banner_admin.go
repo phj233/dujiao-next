@@ -76,7 +76,7 @@ func (h *Handler) GetAdminBanner(c *gin.Context) {
 func (h *Handler) CreateBanner(c *gin.Context) {
 	var req BannerUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (h *Handler) UpdateBanner(c *gin.Context) {
 
 	var req BannerUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

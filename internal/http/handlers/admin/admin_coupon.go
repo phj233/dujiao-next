@@ -34,7 +34,7 @@ type CreateCouponRequest struct {
 func (h *Handler) CreateCoupon(c *gin.Context) {
 	var req CreateCouponRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (h *Handler) UpdateCoupon(c *gin.Context) {
 	}
 	var req CreateCouponRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

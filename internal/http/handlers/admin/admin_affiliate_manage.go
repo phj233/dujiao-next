@@ -116,7 +116,7 @@ func (h *Handler) UpdateAffiliateUserStatus(c *gin.Context) {
 
 	var req AffiliateProfileStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (h *Handler) BatchUpdateAffiliateUserStatus(c *gin.Context) {
 	}
 	var req BatchAffiliateProfileStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	if len(req.ProfileIDs) == 0 {
@@ -186,7 +186,7 @@ func (h *Handler) RejectAffiliateWithdraw(c *gin.Context) {
 
 	var req AffiliateReviewWithdrawRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	row, err := h.AffiliateService.ReviewWithdraw(adminID, uint(id), constants.AffiliateWithdrawActionReject, req.Reason)

@@ -25,7 +25,7 @@ func (h *Handler) GetSMTPSettings(c *gin.Context) {
 func (h *Handler) UpdateSMTPSettings(c *gin.Context) {
 	var req service.SMTPSettingPatch
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -59,7 +59,7 @@ type SMTPTestSendRequest struct {
 func (h *Handler) TestSMTPSettings(c *gin.Context) {
 	var req SMTPTestSendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

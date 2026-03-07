@@ -36,7 +36,7 @@ type authzUpdateAdminPayload struct {
 func (h *Handler) CreateAuthzAdmin(c *gin.Context) {
 	var req authzCreateAdminPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -135,7 +135,7 @@ func (h *Handler) UpdateAuthzAdmin(c *gin.Context) {
 
 	var req authzUpdateAdminPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

@@ -64,7 +64,7 @@ func (h *Handler) GenerateGiftCards(c *gin.Context) {
 	}
 	var req GenerateGiftCardsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	amount, err := decimal.NewFromString(strings.TrimSpace(req.Amount))
@@ -207,7 +207,7 @@ func (h *Handler) UpdateGiftCard(c *gin.Context) {
 	}
 	var req UpdateGiftCardRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	var (
@@ -271,7 +271,7 @@ func (h *Handler) DeleteGiftCard(c *gin.Context) {
 func (h *Handler) BatchUpdateGiftCardStatus(c *gin.Context) {
 	var req BatchUpdateGiftCardStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	affected, err := h.GiftCardService.BatchUpdateStatus(req.IDs, req.Status)
@@ -291,7 +291,7 @@ func (h *Handler) BatchUpdateGiftCardStatus(c *gin.Context) {
 func (h *Handler) ExportGiftCards(c *gin.Context) {
 	var req ExportGiftCardRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	content, contentType, err := h.GiftCardService.ExportGiftCards(req.IDs, req.Format)

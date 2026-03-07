@@ -51,7 +51,7 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 
 	var req CreatePaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

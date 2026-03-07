@@ -518,7 +518,7 @@ type CreateGuestOrderRequest struct {
 func (h *Handler) CreateGuestOrder(c *gin.Context) {
 	var req CreateGuestOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	if h.CaptchaService != nil {
@@ -571,7 +571,7 @@ func (h *Handler) CreateGuestOrder(c *gin.Context) {
 func (h *Handler) PreviewGuestOrder(c *gin.Context) {
 	var req CreateGuestOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	var items []service.CreateOrderItem
@@ -736,7 +736,7 @@ type LatestGuestPaymentQuery struct {
 func (h *Handler) CreateGuestPayment(c *gin.Context) {
 	var req CreateGuestPaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	email := strings.TrimSpace(req.Email)
@@ -800,7 +800,7 @@ func (h *Handler) CaptureGuestPayment(c *gin.Context) {
 	}
 	var req CaptureGuestPaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	email := strings.TrimSpace(req.Email)

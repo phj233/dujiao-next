@@ -129,7 +129,7 @@ func toProductSKUInputs(items []ProductSKURequest) []service.ProductSKUInput {
 func (h *Handler) CreateProduct(c *gin.Context) {
 	var req CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -194,7 +194,7 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 
 	var req CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

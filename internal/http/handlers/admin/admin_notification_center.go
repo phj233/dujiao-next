@@ -25,7 +25,7 @@ func (h *Handler) GetNotificationCenterSettings(c *gin.Context) {
 func (h *Handler) UpdateNotificationCenterSettings(c *gin.Context) {
 	var req service.NotificationCenterSettingPatch
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
@@ -55,7 +55,7 @@ type NotificationCenterTestSendRequest struct {
 func (h *Handler) TestNotificationCenterSettings(c *gin.Context) {
 	var req NotificationCenterTestSendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	channel := strings.ToLower(strings.TrimSpace(req.Channel))

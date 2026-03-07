@@ -27,7 +27,7 @@ func (h *Handler) AdminCreateFulfillment(c *gin.Context) {
 
 	var req AdminCreateFulfillmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 

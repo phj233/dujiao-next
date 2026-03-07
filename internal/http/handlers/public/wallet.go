@@ -70,7 +70,7 @@ func (h *Handler) RechargeWallet(c *gin.Context) {
 	}
 	var req WalletRechargeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 	amount, err := decimal.NewFromString(strings.TrimSpace(req.Amount))

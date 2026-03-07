@@ -224,6 +224,21 @@ var messages = map[string]map[string]string{
 		"email.order_status.body_delivered_simple": "订单号：%s\n状态：%s\n金额：%s %s\n\n交付已完成，感谢您的购买。",
 		"email.order_status.body_delivered":        "订单号：%s\n状态：%s\n金额：%s %s\n\n交付内容：\n%s\n\n感谢您的购买。",
 		"email.order_status.guest_tip":             "游客订单可使用下单邮箱与订单密码在网站查询订单详情。",
+
+		// 通用校验规则
+		"validation.rule.required": "不能为空",
+		"validation.rule.min":      "最小值为 %s",
+		"validation.rule.max":      "最大值为 %s",
+		"validation.rule.len":      "长度必须为 %s",
+		"validation.rule.email":    "格式不正确",
+		"validation.rule.url":      "必须是有效的 URL",
+		"validation.rule.oneof":    "必须是以下值之一: %s",
+		"validation.rule.gt":       "必须大于 %s",
+		"validation.rule.gte":      "必须大于或等于 %s",
+		"validation.rule.lt":       "必须小于 %s",
+		"validation.rule.lte":      "必须小于或等于 %s",
+		"validation.rule.numeric":  "必须是数字",
+		"validation.rule.alphanum": "只能包含字母和数字",
 	},
 	LocaleTW: {
 		"error.jwt_secret_missing":                 "JWT secret 未配置",
@@ -434,6 +449,21 @@ var messages = map[string]map[string]string{
 		"email.order_status.body_delivered_simple": "訂單號：%s\n狀態：%s\n金額：%s %s\n\n交付已完成，感謝您的購買。",
 		"email.order_status.body_delivered":        "訂單號：%s\n狀態：%s\n金額：%s %s\n\n交付內容：\n%s\n\n感謝您的購買。",
 		"email.order_status.guest_tip":             "遊客訂單可使用下單信箱與訂單密碼在網站查詢訂單詳情。",
+
+		// 通用校驗規則
+		"validation.rule.required": "不能為空",
+		"validation.rule.min":      "最小值為 %s",
+		"validation.rule.max":      "最大值為 %s",
+		"validation.rule.len":      "長度必須為 %s",
+		"validation.rule.email":    "格式不正確",
+		"validation.rule.url":      "必須是有效的 URL",
+		"validation.rule.oneof":    "必須是以下值之一: %s",
+		"validation.rule.gt":       "必須大於 %s",
+		"validation.rule.gte":      "必須大於或等於 %s",
+		"validation.rule.lt":       "必須小於 %s",
+		"validation.rule.lte":      "必須小於或等於 %s",
+		"validation.rule.numeric":  "必須是數字",
+		"validation.rule.alphanum": "只能包含字母和數字",
 	},
 	LocaleEN: {
 		"error.jwt_secret_missing":                 "JWT secret is not configured",
@@ -644,6 +674,21 @@ var messages = map[string]map[string]string{
 		"email.order_status.body_delivered_simple": "Order No: %s\nStatus: %s\nAmount: %s %s\n\nDelivery completed. Thank you for your purchase.",
 		"email.order_status.body_delivered":        "Order No: %s\nStatus: %s\nAmount: %s %s\n\nDelivery content:\n%s\n\nThank you for your purchase.",
 		"email.order_status.guest_tip":             "Guest orders can be queried on the site using the checkout email and order password.",
+
+		// Validation rules
+		"validation.rule.required": "is required",
+		"validation.rule.min":      "minimum is %s",
+		"validation.rule.max":      "maximum is %s",
+		"validation.rule.len":      "length must be %s",
+		"validation.rule.email":    "invalid format",
+		"validation.rule.url":      "must be a valid URL",
+		"validation.rule.oneof":    "must be one of: %s",
+		"validation.rule.gt":       "must be greater than %s",
+		"validation.rule.gte":      "must be greater than or equal to %s",
+		"validation.rule.lt":       "must be less than %s",
+		"validation.rule.lte":      "must be less than or equal to %s",
+		"validation.rule.numeric":  "must be numeric",
+		"validation.rule.alphanum": "must be alphanumeric",
 	},
 }
 

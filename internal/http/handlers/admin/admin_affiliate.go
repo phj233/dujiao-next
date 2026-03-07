@@ -24,7 +24,7 @@ func (h *Handler) GetAffiliateSettings(c *gin.Context) {
 func (h *Handler) UpdateAffiliateSettings(c *gin.Context) {
 	var req service.AffiliateSetting
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		shared.RespondBindError(c, err)
 		return
 	}
 
