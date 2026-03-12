@@ -160,11 +160,11 @@ func parseEpayPaymentID(form map[string][]string) (uint, error) {
 	if param == "" {
 		return 0, service.ErrPaymentInvalid
 	}
-	parsedID, err := strconv.ParseUint(param, 10, 64)
-	if err != nil || parsedID == 0 {
+	parsedID, err := shared.ParseQueryUint(param, true)
+	if err != nil {
 		return 0, service.ErrPaymentInvalid
 	}
-	return uint(parsedID), nil
+	return parsedID, nil
 }
 
 func parseEpayCallback(form map[string][]string) (*service.PaymentCallbackInput, error) {

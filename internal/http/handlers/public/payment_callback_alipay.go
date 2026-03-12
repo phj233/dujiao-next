@@ -3,7 +3,6 @@ package public
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -226,11 +225,11 @@ func parseAlipayPaymentID(form map[string][]string) (uint, bool) {
 	if strings.HasPrefix(passback, "payment_id:") {
 		passback = strings.TrimSpace(strings.TrimPrefix(passback, "payment_id:"))
 	}
-	parsed, err := strconv.ParseUint(passback, 10, 64)
-	if err != nil || parsed == 0 {
+	parsed, err := shared.ParseQueryUint(passback, true)
+	if err != nil {
 		return 0, false
 	}
-	return uint(parsed), true
+	return parsed, true
 }
 
 func parseAlipayCallback(form map[string][]string, paymentID uint) (*service.PaymentCallbackInput, error) {

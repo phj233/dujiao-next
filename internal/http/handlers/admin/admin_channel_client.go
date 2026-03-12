@@ -2,7 +2,6 @@ package admin
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/dujiao-next/internal/http/handlers/shared"
 	"github.com/dujiao-next/internal/http/response"
@@ -48,13 +47,13 @@ func (h *Handler) CreateChannelClient(c *gin.Context) {
 
 // GetChannelClient 获取渠道客户端详情（含解密 secret）
 func (h *Handler) GetChannelClient(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := shared.ParseParamUint(c, "id")
 	if err != nil {
 		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return
 	}
 
-	detail, err := h.ChannelClientService.GetChannelClientDetail(uint(id))
+	detail, err := h.ChannelClientService.GetChannelClientDetail(id)
 	if err != nil {
 		if errors.Is(err, service.ErrChannelClientNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.not_found", nil)
@@ -72,7 +71,7 @@ type updateChannelClientStatusRequest struct {
 
 // UpdateChannelClientStatus 更新渠道客户端状态
 func (h *Handler) UpdateChannelClientStatus(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := shared.ParseParamUint(c, "id")
 	if err != nil {
 		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return
@@ -84,7 +83,7 @@ func (h *Handler) UpdateChannelClientStatus(c *gin.Context) {
 		return
 	}
 
-	if err := h.ChannelClientService.UpdateChannelClientStatus(uint(id), req.Status); err != nil {
+	if err := h.ChannelClientService.UpdateChannelClientStatus(id, req.Status); err != nil {
 		if errors.Is(err, service.ErrChannelClientNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.not_found", nil)
 			return
@@ -105,7 +104,7 @@ type updateChannelClientRequest struct {
 
 // UpdateChannelClient 更新渠道客户端信息
 func (h *Handler) UpdateChannelClient(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := shared.ParseParamUint(c, "id")
 	if err != nil {
 		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return
@@ -117,7 +116,7 @@ func (h *Handler) UpdateChannelClient(c *gin.Context) {
 		return
 	}
 
-	result, err := h.ChannelClientService.UpdateChannelClient(uint(id), req.Name, req.Description, req.BotToken, req.CallbackURL)
+	result, err := h.ChannelClientService.UpdateChannelClient(id, req.Name, req.Description, req.BotToken, req.CallbackURL)
 	if err != nil {
 		if errors.Is(err, service.ErrChannelClientNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.not_found", nil)
@@ -132,13 +131,13 @@ func (h *Handler) UpdateChannelClient(c *gin.Context) {
 
 // ResetChannelClientSecret 重置渠道客户端 Secret
 func (h *Handler) ResetChannelClientSecret(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := shared.ParseParamUint(c, "id")
 	if err != nil {
 		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return
 	}
 
-	result, err := h.ChannelClientService.ResetChannelClientSecret(uint(id))
+	result, err := h.ChannelClientService.ResetChannelClientSecret(id)
 	if err != nil {
 		if errors.Is(err, service.ErrChannelClientNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.not_found", nil)
@@ -153,13 +152,13 @@ func (h *Handler) ResetChannelClientSecret(c *gin.Context) {
 
 // DeleteChannelClient 删除渠道客户端
 func (h *Handler) DeleteChannelClient(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := shared.ParseParamUint(c, "id")
 	if err != nil {
 		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return
 	}
 
-	if err := h.ChannelClientService.DeleteChannelClient(uint(id)); err != nil {
+	if err := h.ChannelClientService.DeleteChannelClient(id); err != nil {
 		if errors.Is(err, service.ErrChannelClientNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.not_found", nil)
 			return

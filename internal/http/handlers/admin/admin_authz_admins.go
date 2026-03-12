@@ -93,12 +93,12 @@ func (h *Handler) CreateAuthzAdmin(c *gin.Context) {
 	_ = cache.SetAdminAuthState(c.Request.Context(), cache.BuildAdminAuthState(admin))
 
 	h.recordAuthzAudit(c, service.AuthzAuditRecordInput{
-		OperatorAdminID:  shared.GetContextUintOrZero(c, "admin_id"),
-		OperatorUsername: shared.GetContextString(c, "username"),
+		OperatorAdminID:  c.GetUint("admin_id"),
+		OperatorUsername: strings.TrimSpace(c.GetString("username")),
 		TargetAdminID:    &admin.ID,
 		TargetUsername:   admin.Username,
 		Action:           "admin_create",
-		RequestID:        shared.GetContextString(c, "request_id"),
+		RequestID:        strings.TrimSpace(c.GetString("request_id")),
 		Detail: models.JSON{
 			"target_admin_id": admin.ID,
 			"target_username": admin.Username,
@@ -107,7 +107,7 @@ func (h *Handler) CreateAuthzAdmin(c *gin.Context) {
 	})
 
 	logger.Infow("admin_authz_admin_created",
-		"operator_admin_id", shared.GetContextUintOrZero(c, "admin_id"),
+		"operator_admin_id", c.GetUint("admin_id"),
 		"target_admin_id", admin.ID,
 		"target_username", admin.Username,
 		"is_super", admin.IsSuper,
@@ -210,17 +210,17 @@ func (h *Handler) UpdateAuthzAdmin(c *gin.Context) {
 	_ = cache.SetAdminAuthState(c.Request.Context(), cache.BuildAdminAuthState(admin))
 
 	sort.Strings(updatedFields)
-	if shared.GetContextUintOrZero(c, "admin_id") == admin.ID {
+	if c.GetUint("admin_id") == admin.ID {
 		c.Set("admin_is_super", admin.IsSuper)
 	}
 
 	h.recordAuthzAudit(c, service.AuthzAuditRecordInput{
-		OperatorAdminID:  shared.GetContextUintOrZero(c, "admin_id"),
-		OperatorUsername: shared.GetContextString(c, "username"),
+		OperatorAdminID:  c.GetUint("admin_id"),
+		OperatorUsername: strings.TrimSpace(c.GetString("username")),
 		TargetAdminID:    &admin.ID,
 		TargetUsername:   admin.Username,
 		Action:           "admin_update",
-		RequestID:        shared.GetContextString(c, "request_id"),
+		RequestID:        strings.TrimSpace(c.GetString("request_id")),
 		Detail: models.JSON{
 			"target_admin_id": admin.ID,
 			"target_username": admin.Username,
@@ -230,7 +230,7 @@ func (h *Handler) UpdateAuthzAdmin(c *gin.Context) {
 	})
 
 	logger.Infow("admin_authz_admin_updated",
-		"operator_admin_id", shared.GetContextUintOrZero(c, "admin_id"),
+		"operator_admin_id", c.GetUint("admin_id"),
 		"target_admin_id", admin.ID,
 		"target_username", admin.Username,
 		"updated_fields", updatedFields,
@@ -255,7 +255,7 @@ func (h *Handler) DeleteAuthzAdmin(c *gin.Context) {
 		shared.RespondError(c, response.CodeBadRequest, "error.admin_id_invalid", nil)
 		return
 	}
-	if shared.GetContextUintOrZero(c, "admin_id") == adminID {
+	if c.GetUint("admin_id") == adminID {
 		shared.RespondError(c, response.CodeBadRequest, "error.admin_delete_self_forbidden", nil)
 		return
 	}
@@ -285,12 +285,12 @@ func (h *Handler) DeleteAuthzAdmin(c *gin.Context) {
 	_ = cache.DelAdminAuthState(c.Request.Context(), adminID)
 
 	h.recordAuthzAudit(c, service.AuthzAuditRecordInput{
-		OperatorAdminID:  shared.GetContextUintOrZero(c, "admin_id"),
-		OperatorUsername: shared.GetContextString(c, "username"),
+		OperatorAdminID:  c.GetUint("admin_id"),
+		OperatorUsername: strings.TrimSpace(c.GetString("username")),
 		TargetAdminID:    &adminID,
 		TargetUsername:   admin.Username,
 		Action:           "admin_delete",
-		RequestID:        shared.GetContextString(c, "request_id"),
+		RequestID:        strings.TrimSpace(c.GetString("request_id")),
 		Detail: models.JSON{
 			"target_admin_id": adminID,
 			"target_username": admin.Username,
@@ -298,7 +298,7 @@ func (h *Handler) DeleteAuthzAdmin(c *gin.Context) {
 	})
 
 	logger.Infow("admin_authz_admin_deleted",
-		"operator_admin_id", shared.GetContextUintOrZero(c, "admin_id"),
+		"operator_admin_id", c.GetUint("admin_id"),
 		"target_admin_id", adminID,
 		"target_username", admin.Username,
 	)
