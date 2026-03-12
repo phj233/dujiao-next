@@ -573,27 +573,6 @@ func normalizeStringList(items []string, lower bool) []string {
 	return result
 }
 
-func readStringList(source map[string]interface{}, key string, fallback []string) []string {
-	value, ok := source[key]
-	if !ok {
-		return cloneStringSlice(fallback)
-	}
-	switch raw := value.(type) {
-	case []string:
-		return cloneStringSlice(raw)
-	case []interface{}:
-		result := make([]string, 0, len(raw))
-		for _, item := range raw {
-			if text, ok := item.(string); ok {
-				result = append(result, text)
-			}
-		}
-		return result
-	default:
-		return cloneStringSlice(fallback)
-	}
-}
-
 func applyNotificationSceneTemplatePatch(target *NotificationSceneTemplate, patch *NotificationSceneTemplatePatch) {
 	if target == nil || patch == nil {
 		return

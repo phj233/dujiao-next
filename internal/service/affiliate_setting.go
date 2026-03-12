@@ -1,10 +1,8 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/dujiao-next/internal/constants"
@@ -156,29 +154,6 @@ func (s *SettingService) UpdateAffiliateSetting(setting AffiliateSetting) (Affil
 	return normalized, nil
 }
 
-func parseSettingFloat(value interface{}) (float64, error) {
-	switch v := value.(type) {
-	case float32:
-		return float64(v), nil
-	case float64:
-		return v, nil
-	case int:
-		return float64(v), nil
-	case int64:
-		return float64(v), nil
-	case json.Number:
-		return v.Float64()
-	case string:
-		trimmed := strings.TrimSpace(v)
-		if trimmed == "" {
-			return 0, fmt.Errorf("empty string")
-		}
-		return strconv.ParseFloat(trimmed, 64)
-	default:
-		return 0, fmt.Errorf("unsupported value type")
-	}
-}
-
 func roundAffiliateDecimal(value float64) float64 {
 	return math.Round(value*100) / 100
 }
@@ -206,19 +181,4 @@ func normalizeAffiliateWithdrawChannels(channels []string) []string {
 		}
 	}
 	return result
-}
-
-func normalizeSettingStringList(raw interface{}) []string {
-	switch value := raw.(type) {
-	case []string:
-		return append([]string(nil), value...)
-	case []interface{}:
-		items := make([]string, 0, len(value))
-		for _, item := range value {
-			items = append(items, normalizeSettingText(item))
-		}
-		return items
-	default:
-		return nil
-	}
 }

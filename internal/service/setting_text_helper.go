@@ -53,3 +53,41 @@ func cloneStringSlice(items []string) []string {
 	copy(result, items)
 	return result
 }
+
+// readStringList 从 map 中读取字符串列表，失败时回退默认值副本。
+func readStringList(source map[string]interface{}, key string, fallback []string) []string {
+	value, ok := source[key]
+	if !ok {
+		return cloneStringSlice(fallback)
+	}
+	switch raw := value.(type) {
+	case []string:
+		return cloneStringSlice(raw)
+	case []interface{}:
+		result := make([]string, 0, len(raw))
+		for _, item := range raw {
+			if text, ok := item.(string); ok {
+				result = append(result, text)
+			}
+		}
+		return result
+	default:
+		return cloneStringSlice(fallback)
+	}
+}
+
+// normalizeSettingStringList 统一归一化字符串列表设置值。
+func normalizeSettingStringList(raw interface{}) []string {
+	switch value := raw.(type) {
+	case []string:
+		return append([]string(nil), value...)
+	case []interface{}:
+		items := make([]string, 0, len(value))
+		for _, item := range value {
+			items = append(items, normalizeSettingText(item))
+		}
+		return items
+	default:
+		return nil
+	}
+}
