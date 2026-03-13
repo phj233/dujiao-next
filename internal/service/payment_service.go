@@ -476,9 +476,9 @@ func (s *PaymentService) CreateWalletRechargePayment(input CreateWalletRechargeP
 	if feeRate.LessThan(decimal.Zero) || feeRate.GreaterThan(decimal.NewFromInt(100)) {
 		return nil, ErrPaymentChannelConfigInvalid
 	}
-	fixedFee := decimal.Zero
-	if channel.FixedFee.Decimal.GreaterThan(decimal.Zero) {
-		fixedFee = channel.FixedFee.Decimal.Round(2)
+	fixedFee := channel.FixedFee.Decimal.Round(2)
+	if fixedFee.LessThan(decimal.Zero) || fixedFee.GreaterThanOrEqual(decimal.NewFromInt(10000)) {
+		return nil, ErrPaymentChannelConfigInvalid
 	}
 
 	feeAmount := fixedFee

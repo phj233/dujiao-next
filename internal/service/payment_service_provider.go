@@ -381,6 +381,11 @@ func (s *PaymentService) ValidateChannel(channel *models.PaymentChannel) error {
 	if feeRate.LessThan(decimal.Zero) || feeRate.GreaterThan(decimal.NewFromInt(100)) {
 		return ErrPaymentChannelConfigInvalid
 	}
+	fixedFee := channel.FixedFee.Decimal.Round(2)
+	// decimal(6,2) max value is 9999.99
+	if fixedFee.LessThan(decimal.Zero) || fixedFee.GreaterThanOrEqual(decimal.NewFromInt(10000)) {
+		return ErrPaymentChannelConfigInvalid
+	}
 	providerType := strings.ToLower(strings.TrimSpace(channel.ProviderType))
 	switch providerType {
 	case constants.PaymentProviderEpay:
