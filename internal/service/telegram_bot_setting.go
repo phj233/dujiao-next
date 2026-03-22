@@ -499,6 +499,7 @@ func (s *SettingService) UpdateTelegramBotRuntimeStatus(status TelegramBotRuntim
 var validMenuActionTypes = map[string]bool{
 	"builtin": true,
 	"url":     true,
+	"web_app": true,
 	"command": true,
 }
 

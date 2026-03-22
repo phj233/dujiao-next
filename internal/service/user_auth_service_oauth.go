@@ -20,11 +20,24 @@ type LoginWithTelegramInput struct {
 	Context context.Context
 }
 
+// LoginWithTelegramMiniAppInput Telegram Mini App 登录输入
+type LoginWithTelegramMiniAppInput struct {
+	InitData string
+	Context  context.Context
+}
+
 // BindTelegramInput 绑定 Telegram 输入
 type BindTelegramInput struct {
 	UserID  uint
 	Payload TelegramLoginPayload
 	Context context.Context
+}
+
+// BindTelegramMiniAppInput Telegram Mini App 绑定输入
+type BindTelegramMiniAppInput struct {
+	UserID   uint
+	InitData string
+	Context  context.Context
 }
 
 // TelegramChannelIdentityInput Telegram 渠道身份输入
@@ -56,7 +69,26 @@ func (s *UserAuthService) LoginWithTelegram(input LoginWithTelegramInput) (*mode
 	if err != nil {
 		return nil, "", time.Time{}, err
 	}
+	return s.loginWithVerifiedTelegram(verified)
+}
 
+// LoginWithTelegramMiniApp Telegram Mini App 登录
+func (s *UserAuthService) LoginWithTelegramMiniApp(input LoginWithTelegramMiniAppInput) (*models.User, string, time.Time, error) {
+	if s.telegramAuthService == nil || s.userOAuthIdentityRepo == nil {
+		return nil, "", time.Time{}, ErrTelegramAuthConfigInvalid
+	}
+	ctx := input.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	verified, err := s.telegramAuthService.VerifyMiniAppInitData(ctx, input.InitData)
+	if err != nil {
+		return nil, "", time.Time{}, err
+	}
+	return s.loginWithVerifiedTelegram(verified)
+}
+
+func (s *UserAuthService) loginWithVerifiedTelegram(verified *TelegramIdentityVerified) (*models.User, string, time.Time, error) {
 	identity, err := s.userOAuthIdentityRepo.GetByProviderUserID(verified.Provider, verified.ProviderUserID)
 	if err != nil {
 		return nil, "", time.Time{}, err
@@ -137,7 +169,30 @@ func (s *UserAuthService) BindTelegram(input BindTelegramInput) (*models.UserOAu
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.getActiveUserByID(input.UserID); err != nil {
+	return s.bindVerifiedTelegram(input.UserID, verified)
+}
+
+// BindTelegramMiniApp 绑定当前用户的 Telegram Mini App 身份
+func (s *UserAuthService) BindTelegramMiniApp(input BindTelegramMiniAppInput) (*models.UserOAuthIdentity, error) {
+	if input.UserID == 0 {
+		return nil, ErrNotFound
+	}
+	if s.telegramAuthService == nil || s.userOAuthIdentityRepo == nil {
+		return nil, ErrTelegramAuthConfigInvalid
+	}
+	ctx := input.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	verified, err := s.telegramAuthService.VerifyMiniAppInitData(ctx, input.InitData)
+	if err != nil {
+		return nil, err
+	}
+	return s.bindVerifiedTelegram(input.UserID, verified)
+}
+
+func (s *UserAuthService) bindVerifiedTelegram(userID uint, verified *TelegramIdentityVerified) (*models.UserOAuthIdentity, error) {
+	if _, err := s.getActiveUserByID(userID); err != nil {
 		return nil, err
 	}
 
@@ -145,11 +200,11 @@ func (s *UserAuthService) BindTelegram(input BindTelegramInput) (*models.UserOAu
 	if err != nil {
 		return nil, err
 	}
-	if occupied != nil && occupied.UserID != input.UserID {
+	if occupied != nil && occupied.UserID != userID {
 		return nil, ErrUserOAuthIdentityExists
 	}
 
-	current, err := s.userOAuthIdentityRepo.GetByUserProvider(input.UserID, verified.Provider)
+	current, err := s.userOAuthIdentityRepo.GetByUserProvider(userID, verified.Provider)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +213,7 @@ func (s *UserAuthService) BindTelegram(input BindTelegramInput) (*models.UserOAu
 	}
 	if current == nil {
 		current = &models.UserOAuthIdentity{
-			UserID:         input.UserID,
+			UserID:         userID,
 			Provider:       verified.Provider,
 			ProviderUserID: verified.ProviderUserID,
 			Username:       verified.Username,

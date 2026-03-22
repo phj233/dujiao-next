@@ -5,7 +5,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -38,14 +40,20 @@ type TelegramIdentityVerified struct {
 	AuthAt         time.Time
 }
 
+type telegramReplaySetNXFunc func(ctx context.Context, key string, value interface{}, ttl time.Duration) (bool, error)
+
 // TelegramAuthService Telegram 登录校验服务
 type TelegramAuthService struct {
-	cfg config.TelegramAuthConfig
+	cfg         config.TelegramAuthConfig
+	replaySetNX telegramReplaySetNXFunc
 }
 
 // NewTelegramAuthService 创建 Telegram 登录校验服务
 func NewTelegramAuthService(cfg config.TelegramAuthConfig) *TelegramAuthService {
-	return &TelegramAuthService{cfg: normalizeTelegramAuthConfig(cfg)}
+	return &TelegramAuthService{
+		cfg:         normalizeTelegramAuthConfig(cfg),
+		replaySetNX: cache.SetNX,
+	}
 }
 
 // SetConfig 更新运行时配置
@@ -62,12 +70,14 @@ func (s *TelegramAuthService) PublicConfig() map[string]interface{} {
 		return map[string]interface{}{
 			"enabled":      false,
 			"bot_username": "",
+			"mini_app_url": "",
 		}
 	}
 	cfg := normalizeTelegramAuthConfig(s.cfg)
 	return map[string]interface{}{
 		"enabled":      cfg.Enabled,
 		"bot_username": strings.TrimSpace(cfg.BotUsername),
+		"mini_app_url": strings.TrimSpace(cfg.MiniAppURL),
 	}
 }
 
@@ -90,11 +100,8 @@ func (s *TelegramAuthService) VerifyLogin(ctx context.Context, payload TelegramL
 
 	now := time.Now()
 	authAt := time.Unix(normalized.AuthDate, 0)
-	if authAt.After(now.Add(time.Minute)) {
-		return nil, ErrTelegramAuthPayloadInvalid
-	}
-	if now.Sub(authAt) > time.Duration(cfg.LoginExpireSeconds)*time.Second {
-		return nil, ErrTelegramAuthExpired
+	if err := validateTelegramAuthTime(now, authAt, cfg.LoginExpireSeconds); err != nil {
+		return nil, err
 	}
 
 	dataCheckString := buildTelegramDataCheckString(normalized)
@@ -103,14 +110,8 @@ func (s *TelegramAuthService) VerifyLogin(ctx context.Context, payload TelegramL
 		return nil, ErrTelegramAuthSignatureInvalid
 	}
 
-	replayTTL := time.Duration(cfg.ReplayTTLSeconds) * time.Second
-	replayKey := fmt.Sprintf("telegram:auth:replay:%d:%s", normalized.ID, normalized.Hash)
-	ok, err := cache.SetNX(ctx, replayKey, "1", replayTTL)
-	if err != nil {
+	if err := s.markTelegramReplay(ctx, normalized.ID, normalized.Hash, cfg.ReplayTTLSeconds); err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, ErrTelegramAuthReplay
 	}
 
 	return &TelegramIdentityVerified{
@@ -120,6 +121,50 @@ func (s *TelegramAuthService) VerifyLogin(ctx context.Context, payload TelegramL
 		AvatarURL:      normalized.PhotoURL,
 		FirstName:      normalized.FirstName,
 		LastName:       normalized.LastName,
+		AuthAt:         authAt,
+	}, nil
+}
+
+// VerifyMiniAppInitData 校验 Telegram Mini App initData。
+func (s *TelegramAuthService) VerifyMiniAppInitData(ctx context.Context, initData string) (*TelegramIdentityVerified, error) {
+	if s == nil {
+		return nil, ErrTelegramAuthConfigInvalid
+	}
+	cfg := normalizeTelegramAuthConfig(s.cfg)
+	if !cfg.Enabled {
+		return nil, ErrTelegramAuthDisabled
+	}
+	if strings.TrimSpace(cfg.BotToken) == "" {
+		return nil, ErrTelegramAuthConfigInvalid
+	}
+
+	parsed, err := normalizeTelegramMiniAppInitData(initData)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	authAt := time.Unix(parsed.AuthDate, 0)
+	if err := validateTelegramAuthTime(now, authAt, cfg.LoginExpireSeconds); err != nil {
+		return nil, err
+	}
+
+	expected := buildTelegramMiniAppHash(cfg.BotToken, parsed.DataCheckString)
+	if !hmac.Equal([]byte(expected), []byte(parsed.Hash)) {
+		return nil, ErrTelegramAuthSignatureInvalid
+	}
+
+	if err := s.markTelegramReplay(ctx, parsed.User.ID, parsed.Hash, cfg.ReplayTTLSeconds); err != nil {
+		return nil, err
+	}
+
+	return &TelegramIdentityVerified{
+		Provider:       constants.UserOAuthProviderTelegram,
+		ProviderUserID: strconv.FormatInt(parsed.User.ID, 10),
+		Username:       parsed.User.Username,
+		AvatarURL:      parsed.User.PhotoURL,
+		FirstName:      parsed.User.FirstName,
+		LastName:       parsed.User.LastName,
 		AuthAt:         authAt,
 	}, nil
 }
@@ -153,6 +198,64 @@ func normalizeTelegramLoginPayload(payload TelegramLoginPayload) (TelegramLoginP
 		return TelegramLoginPayload{}, ErrTelegramAuthPayloadInvalid
 	}
 	return normalized, nil
+}
+
+type telegramMiniAppUser struct {
+	ID        int64  `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
+	PhotoURL  string `json:"photo_url"`
+}
+
+type telegramMiniAppInitDataVerified struct {
+	AuthDate        int64
+	Hash            string
+	User            telegramMiniAppUser
+	DataCheckString string
+}
+
+func normalizeTelegramMiniAppInitData(raw string) (*telegramMiniAppInitDataVerified, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+
+	values, err := url.ParseQuery(trimmed)
+	if err != nil {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+
+	hash := strings.ToLower(strings.TrimSpace(values.Get("hash")))
+	authDateText := strings.TrimSpace(values.Get("auth_date"))
+	userRaw := strings.TrimSpace(values.Get("user"))
+	if hash == "" || authDateText == "" || userRaw == "" {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+
+	authDate, err := strconv.ParseInt(authDateText, 10, 64)
+	if err != nil || authDate <= 0 {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+
+	var user telegramMiniAppUser
+	if err := json.Unmarshal([]byte(userRaw), &user); err != nil {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+	user.FirstName = strings.TrimSpace(user.FirstName)
+	user.LastName = strings.TrimSpace(user.LastName)
+	user.Username = strings.TrimSpace(user.Username)
+	user.PhotoURL = strings.TrimSpace(user.PhotoURL)
+	if user.ID <= 0 {
+		return nil, ErrTelegramAuthPayloadInvalid
+	}
+
+	return &telegramMiniAppInitDataVerified{
+		AuthDate:        authDate,
+		Hash:            hash,
+		User:            user,
+		DataCheckString: buildTelegramMiniAppDataCheckString(values),
+	}, nil
 }
 
 func buildTelegramDataCheckString(payload TelegramLoginPayload) string {
@@ -191,4 +294,65 @@ func buildTelegramHash(botToken, dataCheckString string) string {
 	mac := hmac.New(sha256.New, secret[:])
 	_, _ = mac.Write([]byte(dataCheckString))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func buildTelegramMiniAppDataCheckString(values url.Values) string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		// Mini App 的 data_check_string 仅排除 hash，其他字段按原样参与校验串构造。
+		if key == "hash" {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%s", key, values.Get(key)))
+	}
+	return strings.Join(parts, "\n")
+}
+
+func buildTelegramMiniAppHash(botToken, dataCheckString string) string {
+	secretMac := hmac.New(sha256.New, []byte("WebAppData"))
+	_, _ = secretMac.Write([]byte(strings.TrimSpace(botToken)))
+	secret := secretMac.Sum(nil)
+
+	mac := hmac.New(sha256.New, secret)
+	_, _ = mac.Write([]byte(dataCheckString))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func validateTelegramAuthTime(now, authAt time.Time, expireSeconds int) error {
+	if authAt.After(now.Add(time.Minute)) {
+		return ErrTelegramAuthPayloadInvalid
+	}
+	if now.Sub(authAt) > time.Duration(expireSeconds)*time.Second {
+		return ErrTelegramAuthExpired
+	}
+	return nil
+}
+
+func (s *TelegramAuthService) markTelegramReplay(ctx context.Context, userID int64, hash string, replayTTLSeconds int) error {
+	if s == nil {
+		return ErrTelegramAuthConfigInvalid
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	setNX := s.replaySetNX
+	if setNX == nil {
+		setNX = cache.SetNX
+	}
+	replayTTL := time.Duration(replayTTLSeconds) * time.Second
+	replayKey := fmt.Sprintf("telegram:auth:replay:%d:%s", userID, hash)
+	ok, err := setNX(ctx, replayKey, "1", replayTTL)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrTelegramAuthReplay
+	}
+	return nil
 }

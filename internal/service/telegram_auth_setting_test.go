@@ -10,6 +10,7 @@ import (
 func TestNormalizeTelegramAuthSetting(t *testing.T) {
 	setting := NormalizeTelegramAuthSetting(TelegramAuthSetting{
 		BotUsername:        " @demo_bot ",
+		MiniAppURL:         " https://example.com/mini-app ",
 		LoginExpireSeconds: 0,
 		ReplayTTLSeconds:   10,
 	})
@@ -19,6 +20,9 @@ func TestNormalizeTelegramAuthSetting(t *testing.T) {
 	}
 	if setting.LoginExpireSeconds != 300 {
 		t.Fatalf("expected default login expire 300, got %d", setting.LoginExpireSeconds)
+	}
+	if setting.MiniAppURL != "https://example.com/mini-app" {
+		t.Fatalf("expected normalized mini app url, got %q", setting.MiniAppURL)
 	}
 	if setting.ReplayTTLSeconds != 60 {
 		t.Fatalf("expected minimum replay ttl 60, got %d", setting.ReplayTTLSeconds)
@@ -40,6 +44,7 @@ func TestPatchTelegramAuthSettingKeepsTokenWhenEmpty(t *testing.T) {
 	updated, err := svc.PatchTelegramAuthSetting(defaultCfg, TelegramAuthSettingPatch{
 		BotUsername:        ptrString("@new_bot"),
 		BotToken:           ptrString(""),
+		MiniAppURL:         ptrString(" https://example.com/mini-app "),
 		LoginExpireSeconds: ptrInt(600),
 		ReplayTTLSeconds:   ptrInt(900),
 	})
@@ -52,6 +57,9 @@ func TestPatchTelegramAuthSettingKeepsTokenWhenEmpty(t *testing.T) {
 	if updated.BotUsername != "new_bot" {
 		t.Fatalf("expected normalized username new_bot, got %q", updated.BotUsername)
 	}
+	if updated.MiniAppURL != "https://example.com/mini-app" {
+		t.Fatalf("expected normalized mini app url, got %q", updated.MiniAppURL)
+	}
 
 	saved, ok := repo.store[constants.SettingKeyTelegramAuthConfig]
 	if !ok {
@@ -59,6 +67,9 @@ func TestPatchTelegramAuthSettingKeepsTokenWhenEmpty(t *testing.T) {
 	}
 	if saved["bot_token"] != "secret-token" {
 		t.Fatalf("expected saved token keep old value, got %v", saved["bot_token"])
+	}
+	if saved["mini_app_url"] != "https://example.com/mini-app" {
+		t.Fatalf("expected saved mini app url, got %v", saved["mini_app_url"])
 	}
 }
 

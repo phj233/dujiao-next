@@ -108,6 +108,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 			auth.POST("/register", publicHandler.UserRegister)
 			auth.POST("/login", RateLimitMiddleware(redisClient, loginRule, KeyByIPAndJSONField("email")), publicHandler.UserLogin)
 			auth.POST("/telegram/login", RateLimitMiddleware(redisClient, loginRule, KeyByIP), publicHandler.UserTelegramLogin)
+			auth.POST("/telegram/miniapp/login", RateLimitMiddleware(redisClient, loginRule, KeyByIP), publicHandler.UserTelegramMiniAppLogin)
 			auth.POST("/forgot-password", publicHandler.UserForgotPassword)
 		}
 
@@ -121,6 +122,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 			user.PUT("/me/password", publicHandler.ChangeUserPassword)
 			user.GET("/me/telegram", publicHandler.GetMyTelegramBinding)
 			user.POST("/me/telegram/bind", publicHandler.BindMyTelegram)
+			user.POST("/me/telegram/miniapp/bind", publicHandler.BindMyTelegramMiniApp)
 			user.DELETE("/me/telegram/unbind", publicHandler.UnbindMyTelegram)
 			user.POST("/me/email/send-verify-code", publicHandler.SendChangeEmailCode)
 			user.POST("/me/email/change", publicHandler.ChangeEmail)

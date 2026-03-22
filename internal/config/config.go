@@ -98,6 +98,7 @@ type TelegramAuthConfig struct {
 	Enabled            bool   `mapstructure:"enabled"`
 	BotUsername        string `mapstructure:"bot_username"`
 	BotToken           string `mapstructure:"bot_token"`
+	MiniAppURL         string `mapstructure:"mini_app_url"`
 	LoginExpireSeconds int    `mapstructure:"login_expire_seconds"`
 	ReplayTTLSeconds   int    `mapstructure:"replay_ttl_seconds"`
 }

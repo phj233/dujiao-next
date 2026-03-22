@@ -123,12 +123,14 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	telegramAuthConfig := map[string]interface{}{
 		"enabled":      false,
 		"bot_username": "",
+		"mini_app_url": "",
 	}
 	if h.TelegramAuthService != nil {
 		telegramAuthConfig = h.TelegramAuthService.PublicConfig()
 	} else if h.Config != nil {
 		telegramAuthConfig["enabled"] = h.Config.TelegramAuth.Enabled
 		telegramAuthConfig["bot_username"] = strings.TrimSpace(h.Config.TelegramAuth.BotUsername)
+		telegramAuthConfig["mini_app_url"] = strings.TrimSpace(h.Config.TelegramAuth.MiniAppURL)
 	}
 	data["telegram_auth"] = telegramAuthConfig
 

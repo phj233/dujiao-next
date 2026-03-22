@@ -14,6 +14,7 @@ type TelegramAuthSetting struct {
 	Enabled            bool   `json:"enabled"`
 	BotUsername        string `json:"bot_username"`
 	BotToken           string `json:"bot_token"`
+	MiniAppURL         string `json:"mini_app_url"`
 	LoginExpireSeconds int    `json:"login_expire_seconds"`
 	ReplayTTLSeconds   int    `json:"replay_ttl_seconds"`
 }
@@ -23,6 +24,7 @@ type TelegramAuthSettingPatch struct {
 	Enabled            *bool   `json:"enabled"`
 	BotUsername        *string `json:"bot_username"`
 	BotToken           *string `json:"bot_token"`
+	MiniAppURL         *string `json:"mini_app_url"`
 	LoginExpireSeconds *int    `json:"login_expire_seconds"`
 	ReplayTTLSeconds   *int    `json:"replay_ttl_seconds"`
 }
@@ -33,6 +35,7 @@ func TelegramAuthDefaultSetting(cfg config.TelegramAuthConfig) TelegramAuthSetti
 		Enabled:            cfg.Enabled,
 		BotUsername:        strings.TrimSpace(cfg.BotUsername),
 		BotToken:           strings.TrimSpace(cfg.BotToken),
+		MiniAppURL:         strings.TrimSpace(cfg.MiniAppURL),
 		LoginExpireSeconds: cfg.LoginExpireSeconds,
 		ReplayTTLSeconds:   cfg.ReplayTTLSeconds,
 	})
@@ -42,6 +45,7 @@ func TelegramAuthDefaultSetting(cfg config.TelegramAuthConfig) TelegramAuthSetti
 func NormalizeTelegramAuthSetting(setting TelegramAuthSetting) TelegramAuthSetting {
 	setting.BotUsername = strings.TrimPrefix(strings.TrimSpace(setting.BotUsername), "@")
 	setting.BotToken = strings.TrimSpace(setting.BotToken)
+	setting.MiniAppURL = strings.TrimSpace(setting.MiniAppURL)
 
 	if setting.LoginExpireSeconds <= 0 {
 		setting.LoginExpireSeconds = 300
@@ -97,6 +101,7 @@ func TelegramAuthSettingToConfig(setting TelegramAuthSetting) config.TelegramAut
 		Enabled:            normalized.Enabled,
 		BotUsername:        normalized.BotUsername,
 		BotToken:           normalized.BotToken,
+		MiniAppURL:         normalized.MiniAppURL,
 		LoginExpireSeconds: normalized.LoginExpireSeconds,
 		ReplayTTLSeconds:   normalized.ReplayTTLSeconds,
 	}
@@ -109,6 +114,7 @@ func TelegramAuthSettingToMap(setting TelegramAuthSetting) map[string]interface{
 		"enabled":              normalized.Enabled,
 		"bot_username":         normalized.BotUsername,
 		"bot_token":            normalized.BotToken,
+		"mini_app_url":         normalized.MiniAppURL,
 		"login_expire_seconds": normalized.LoginExpireSeconds,
 		"replay_ttl_seconds":   normalized.ReplayTTLSeconds,
 	}
@@ -122,6 +128,7 @@ func MaskTelegramAuthSettingForAdmin(setting TelegramAuthSetting) models.JSON {
 		"bot_username":         normalized.BotUsername,
 		"bot_token":            "",
 		"has_bot_token":        normalized.BotToken != "",
+		"mini_app_url":         normalized.MiniAppURL,
 		"login_expire_seconds": normalized.LoginExpireSeconds,
 		"replay_ttl_seconds":   normalized.ReplayTTLSeconds,
 	}
@@ -161,6 +168,9 @@ func (s *SettingService) PatchTelegramAuthSetting(defaultCfg config.TelegramAuth
 			next.BotToken = botToken
 		}
 	}
+	if patch.MiniAppURL != nil {
+		next.MiniAppURL = strings.TrimSpace(*patch.MiniAppURL)
+	}
 	if patch.LoginExpireSeconds != nil {
 		next.LoginExpireSeconds = *patch.LoginExpireSeconds
 	}
@@ -186,6 +196,7 @@ func telegramAuthSettingFromJSON(raw models.JSON, fallback TelegramAuthSetting) 
 	next.Enabled = readBool(raw, "enabled", next.Enabled)
 	next.BotUsername = readString(raw, "bot_username", next.BotUsername)
 	next.BotToken = readString(raw, "bot_token", next.BotToken)
+	next.MiniAppURL = readString(raw, "mini_app_url", next.MiniAppURL)
 	next.LoginExpireSeconds = readInt(raw, "login_expire_seconds", next.LoginExpireSeconds)
 	next.ReplayTTLSeconds = readInt(raw, "replay_ttl_seconds", next.ReplayTTLSeconds)
 	return next

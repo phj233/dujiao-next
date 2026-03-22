@@ -39,6 +39,7 @@ telegram_auth:
   enabled: false
   bot_username: ""  # Telegram Bot 用户名（不含 @）
   bot_token: ""     # Telegram Bot Token（敏感）
+  mini_app_url: ""  # Telegram Mini App 页面地址（需与 BotFather Web App URL 保持一致）
   login_expire_seconds: 300
   replay_ttl_seconds: 300
 

@@ -262,6 +262,12 @@ type UserTelegramLoginRequest struct {
 	Hash      string `json:"hash" binding:"required"`
 }
 
+// UserTelegramMiniAppAuthRequest Telegram Mini App 鉴权请求
+type UserTelegramMiniAppAuthRequest struct {
+	InitData      string `json:"init_data"`
+	InitDataCamel string `json:"initData"`
+}
+
 // UserBindTelegramRequest 绑定 Telegram 请求
 type UserBindTelegramRequest struct {
 	ID        int64  `json:"id" binding:"required"`
@@ -271,6 +277,13 @@ type UserBindTelegramRequest struct {
 	PhotoURL  string `json:"photo_url"`
 	AuthDate  int64  `json:"auth_date" binding:"required"`
 	Hash      string `json:"hash" binding:"required"`
+}
+
+func (r UserTelegramMiniAppAuthRequest) initData() string {
+	if strings.TrimSpace(r.InitData) != "" {
+		return strings.TrimSpace(r.InitData)
+	}
+	return strings.TrimSpace(r.InitDataCamel)
 }
 
 // UserTelegramLogin Telegram 登录
@@ -293,6 +306,62 @@ func (h *Handler) UserTelegramLogin(c *gin.Context) {
 			Hash:      req.Hash,
 		},
 		Context: c.Request.Context(),
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrTelegramAuthDisabled):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramConfig, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_disabled", nil)
+		case errors.Is(err, service.ErrTelegramAuthConfigInvalid):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramConfig, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeInternal, "error.telegram_auth_config_invalid", err)
+		case errors.Is(err, service.ErrTelegramAuthPayloadInvalid):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramInvalid, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_payload_invalid", nil)
+		case errors.Is(err, service.ErrTelegramAuthSignatureInvalid):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramInvalid, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_signature_invalid", nil)
+		case errors.Is(err, service.ErrTelegramAuthExpired):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramExpired, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_expired", nil)
+		case errors.Is(err, service.ErrTelegramAuthReplay):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonTelegramReplayed, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_replayed", nil)
+		case errors.Is(err, service.ErrUserDisabled):
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonUserDisabled, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeUnauthorized, "error.user_disabled", nil)
+		default:
+			h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonInternalError, constants.LoginLogSourceTelegram)
+			shared.RespondError(c, response.CodeInternal, "error.login_failed", err)
+		}
+		return
+	}
+
+	h.recordUserLogin(c, user.Email, user.ID, constants.LoginLogStatusSuccess, "", constants.LoginLogSourceTelegram)
+	response.Success(c, gin.H{
+		"user": gin.H{
+			"id":                user.ID,
+			"email":             user.Email,
+			"nickname":          user.DisplayName,
+			"email_verified_at": user.EmailVerifiedAt,
+		},
+		"token":      token,
+		"expires_at": expiresAt.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+// UserTelegramMiniAppLogin Telegram Mini App 登录
+func (h *Handler) UserTelegramMiniAppLogin(c *gin.Context) {
+	var req UserTelegramMiniAppAuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.initData() == "" {
+		h.recordUserLogin(c, "", 0, constants.LoginLogStatusFailed, constants.LoginLogFailReasonBadRequest, constants.LoginLogSourceTelegram)
+		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+
+	user, token, expiresAt, err := h.UserAuthService.LoginWithTelegramMiniApp(service.LoginWithTelegramMiniAppInput{
+		InitData: req.initData(),
+		Context:  c.Request.Context(),
 	})
 	if err != nil {
 		switch {
@@ -479,6 +548,49 @@ func (h *Handler) BindMyTelegram(c *gin.Context) {
 			Hash:      req.Hash,
 		},
 		Context: c.Request.Context(),
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrTelegramAuthDisabled):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_disabled", nil)
+		case errors.Is(err, service.ErrTelegramAuthConfigInvalid):
+			shared.RespondError(c, response.CodeInternal, "error.telegram_auth_config_invalid", err)
+		case errors.Is(err, service.ErrTelegramAuthPayloadInvalid):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_payload_invalid", nil)
+		case errors.Is(err, service.ErrTelegramAuthSignatureInvalid):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_signature_invalid", nil)
+		case errors.Is(err, service.ErrTelegramAuthExpired):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_expired", nil)
+		case errors.Is(err, service.ErrTelegramAuthReplay):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_auth_replayed", nil)
+		case errors.Is(err, service.ErrUserOAuthIdentityExists):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_bind_conflict", nil)
+		case errors.Is(err, service.ErrUserOAuthAlreadyBound):
+			shared.RespondError(c, response.CodeBadRequest, "error.telegram_already_bound", nil)
+		default:
+			shared.RespondError(c, response.CodeInternal, "error.user_update_failed", err)
+		}
+		return
+	}
+	response.Success(c, shared.BuildTelegramBindingResponse(identity))
+}
+
+// BindMyTelegramMiniApp 绑定当前用户的 Telegram Mini App 身份
+func (h *Handler) BindMyTelegramMiniApp(c *gin.Context) {
+	uid, ok := shared.GetUserID(c)
+	if !ok {
+		return
+	}
+	var req UserTelegramMiniAppAuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.initData() == "" {
+		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+
+	identity, err := h.UserAuthService.BindTelegramMiniApp(service.BindTelegramMiniAppInput{
+		UserID:   uid,
+		InitData: req.initData(),
+		Context:  c.Request.Context(),
 	})
 	if err != nil {
 		switch {

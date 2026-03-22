@@ -383,6 +383,7 @@ func TestUpdateTelegramAuthSettingNormalized(t *testing.T) {
 		"enabled":              true,
 		"bot_username":         " @demo_bot ",
 		"bot_token":            " token-abc ",
+		"mini_app_url":         " https://example.com/mini-app ",
 		"login_expire_seconds": -10,
 		"replay_ttl_seconds":   1,
 	})
@@ -395,6 +396,9 @@ func TestUpdateTelegramAuthSettingNormalized(t *testing.T) {
 	}
 	if result["bot_token"] != "token-abc" {
 		t.Fatalf("unexpected bot_token: %v", result["bot_token"])
+	}
+	if result["mini_app_url"] != "https://example.com/mini-app" {
+		t.Fatalf("unexpected mini_app_url: %v", result["mini_app_url"])
 	}
 	if result["login_expire_seconds"] != 300 {
 		t.Fatalf("unexpected login_expire_seconds: %v", result["login_expire_seconds"])
