@@ -86,6 +86,7 @@ func normalizeSiteSetting(value map[string]interface{}) models.JSON {
 	normalized["scripts"] = normalizeSiteScripts(value["scripts"])
 	normalized["footer_links"] = normalizeSiteFooterLinks(value["footer_links"])
 	normalized[constants.SettingFieldSiteCurrency] = normalizeSiteCurrency(value[constants.SettingFieldSiteCurrency])
+	normalized["template_mode"] = normalizeSiteTemplateMode(value["template_mode"])
 
 	if raw, ok := value["languages"]; ok {
 		normalized["languages"] = normalizeSiteLanguages(raw)
@@ -329,6 +330,15 @@ func normalizeSiteLanguages(raw interface{}) []string {
 		return append([]string(nil), settingSupportedLanguages...)
 	}
 	return result
+}
+
+// normalizeSiteTemplateMode 归一化站点模板模式，允许 "card" 或 "list"，默认 "card"。
+func normalizeSiteTemplateMode(raw interface{}) string {
+	mode := normalizeSettingText(raw)
+	if mode == "list" {
+		return "list"
+	}
+	return "card"
 }
 
 // normalizeRegistrationSetting 归一化注册配置。
