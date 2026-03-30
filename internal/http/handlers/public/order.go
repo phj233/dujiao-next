@@ -237,32 +237,6 @@ func (h *Handler) ListOrders(c *gin.Context) {
 	response.SuccessWithPage(c, dto.NewOrderSummaryList(orders), pagination)
 }
 
-// GetOrder 获取订单详情
-func (h *Handler) GetOrder(c *gin.Context) {
-	uid, ok := shared.GetUserID(c)
-	if !ok {
-		return
-	}
-
-	orderID, err := shared.ParseParamUint(c, "id")
-	if err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
-		return
-	}
-
-	order, err := h.OrderService.GetOrderByUser(orderID, uid)
-	if err != nil {
-		if errors.Is(err, service.ErrOrderNotFound) {
-			shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
-			return
-		}
-		shared.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
-		return
-	}
-
-	response.Success(c, dto.NewOrderDetailTruncated(order))
-}
-
 // GetOrderByOrderNo 按订单号获取订单详情
 func (h *Handler) GetOrderByOrderNo(c *gin.Context) {
 	uid, ok := shared.GetUserID(c)
@@ -296,13 +270,23 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	orderID, err := shared.ParseParamUint(c, "id")
-	if err != nil {
+	orderNo := strings.TrimSpace(c.Param("order_no"))
+	if orderNo == "" {
 		shared.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
 		return
 	}
 
-	order, err := h.OrderService.CancelOrder(orderID, uid)
+	found, err := h.OrderService.GetOrderByUserOrderNo(orderNo, uid)
+	if err != nil {
+		if errors.Is(err, service.ErrOrderNotFound) {
+			shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
+			return
+		}
+		shared.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
+		return
+	}
+
+	order, err := h.OrderService.CancelOrder(found.ID, uid)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrOrderNotFound):
@@ -319,27 +303,25 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 }
 
 // DownloadFulfillment 下载订单交付内容（登录用户）
-// 支持传入父订单 ID 或子订单 ID
+// 支持父订单或子订单的 order_no
 func (h *Handler) DownloadFulfillment(c *gin.Context) {
 	uid, ok := shared.GetUserID(c)
 	if !ok {
 		return
 	}
-	orderID, err := shared.ParseParamUint(c, "id")
-	if err != nil {
+	orderNo := strings.TrimSpace(c.Param("order_no"))
+	if orderNo == "" {
 		shared.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
 		return
 	}
-	// 先按父订单查找
-	order, err := h.OrderService.GetOrderByUser(orderID, uid)
-	if err != nil || order == nil {
-		// 可能是子订单 ID，通过 repo 直接查找并验证 user_id
-		raw, rawErr := h.OrderRepo.GetByID(orderID)
-		if rawErr != nil || raw == nil || raw.UserID != uid {
-			shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
-			return
-		}
-		order = raw
+	order, err := h.OrderRepo.GetAnyByOrderNoAndUser(orderNo, uid)
+	if err != nil {
+		shared.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
+		return
+	}
+	if order == nil {
+		shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
+		return
 	}
 	respondFulfillmentDownload(c, order)
 }

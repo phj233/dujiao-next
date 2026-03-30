@@ -14,14 +14,14 @@ import (
 
 // CreatePaymentRequest 创建支付请求
 type CreatePaymentRequest struct {
-	OrderID    uint `json:"order_id" binding:"required"`
-	ChannelID  uint `json:"channel_id"`
-	UseBalance bool `json:"use_balance"`
+	OrderNo    string `json:"order_no" binding:"required"`
+	ChannelID  uint   `json:"channel_id"`
+	UseBalance bool   `json:"use_balance"`
 }
 
 // LatestPaymentQuery 查询最新待支付记录
 type LatestPaymentQuery struct {
-	OrderID uint `form:"order_id" binding:"required"`
+	OrderNo string `form:"order_no" binding:"required"`
 }
 
 // PaypalWebhookQuery PayPal webhook 查询参数。
@@ -54,7 +54,8 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 		return
 	}
 
-	if _, err := h.OrderService.GetOrderByUser(req.OrderID, uid); err != nil {
+	order, err := h.OrderService.GetOrderByUserOrderNo(req.OrderNo, uid)
+	if err != nil {
 		if errors.Is(err, service.ErrOrderNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
 			return
@@ -64,7 +65,7 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 	}
 
 	result, err := h.PaymentService.CreatePayment(service.CreatePaymentInput{
-		OrderID:    req.OrderID,
+		OrderID:    order.ID,
 		ChannelID:  req.ChannelID,
 		UseBalance: req.UseBalance,
 		ClientIP:   c.ClientIP(),
@@ -151,7 +152,7 @@ func (h *Handler) GetLatestPayment(c *gin.Context) {
 		return
 	}
 
-	order, err := h.OrderService.GetOrderByUser(query.OrderID, uid)
+	order, err := h.OrderService.GetOrderByUserOrderNo(query.OrderNo, uid)
 	if err != nil {
 		if errors.Is(err, service.ErrOrderNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
@@ -186,7 +187,7 @@ func (h *Handler) GetLatestPayment(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"payment_id":       payment.ID,
-		"order_id":         payment.OrderID,
+		"order_no":         order.OrderNo,
 		"channel_id":       payment.ChannelID,
 		"channel_name":     payment.ChannelName,
 		"provider_type":    payment.ProviderType,

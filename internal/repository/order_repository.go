@@ -16,8 +16,10 @@ type OrderRepository interface {
 	ResolveReceiverEmailByOrderID(orderID uint) (string, error)
 	GetByIDAndUser(id uint, userID uint) (*models.Order, error)
 	GetByOrderNoAndUser(orderNo string, userID uint) (*models.Order, error)
+	GetAnyByOrderNoAndUser(orderNo string, userID uint) (*models.Order, error)
 	GetByIDAndGuest(id uint, email, password string) (*models.Order, error)
 	GetByOrderNoAndGuest(orderNo, email, password string) (*models.Order, error)
+	GetAnyByOrderNoAndGuest(orderNo, email, password string) (*models.Order, error)
 	ListChildren(parentID uint) ([]models.Order, error)
 	ListByUser(filter OrderListFilter) ([]models.Order, int64, error)
 	ListByGuest(email, password string, page, pageSize int) ([]models.Order, int64, error)
@@ -132,6 +134,36 @@ func (r *GormOrderRepository) GetByOrderNoAndUser(orderNo string, userID uint) (
 	var order models.Order
 	query := r.withChildren(r.db.Preload("Items").Preload("Fulfillment"))
 	if err := query.Where("order_no = ? AND user_id = ? AND parent_id IS NULL", orderNo, userID).First(&order).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &order, nil
+}
+
+// GetAnyByOrderNoAndUser 按订单号查找订单（不限父/子），用于交付下载等场景
+func (r *GormOrderRepository) GetAnyByOrderNoAndUser(orderNo string, userID uint) (*models.Order, error) {
+	var order models.Order
+	query := r.db.Preload("Items").Preload("Fulfillment").Preload("Children", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Items").Preload("Fulfillment")
+	})
+	if err := query.Where("order_no = ? AND user_id = ?", orderNo, userID).First(&order).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &order, nil
+}
+
+// GetAnyByOrderNoAndGuest 按订单号查找游客订单（不限父/子），用于交付下载等场景
+func (r *GormOrderRepository) GetAnyByOrderNoAndGuest(orderNo, email, password string) (*models.Order, error) {
+	var order models.Order
+	query := r.db.Preload("Items").Preload("Fulfillment").Preload("Children", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Items").Preload("Fulfillment")
+	})
+	if err := query.Where("order_no = ? AND user_id = 0 AND guest_email = ? AND guest_password = ?", orderNo, email, password).First(&order).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

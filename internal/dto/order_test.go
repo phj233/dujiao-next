@@ -67,7 +67,7 @@ func TestOrderDetailOmitsSensitiveFields(t *testing.T) {
 		"coupon_id", "promotion_id", "member_level_id",
 		"user_id", "guest_password", "updated_at",
 		"cost_price", "order_id", "product_id", "sku_id",
-		"delivered_by",
+		"delivered_by", "parent_id",
 	}
 	for _, field := range sensitiveFields {
 		if strings.Contains(jsonStr, `"`+field+`"`) {

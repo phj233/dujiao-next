@@ -9,7 +9,6 @@ import (
 
 // OrderSummary 订单列表响应（精简字段）
 type OrderSummary struct {
-	ID          uint            `json:"id"`
 	OrderNo     string          `json:"order_no"`
 	Status      string          `json:"status"`
 	Currency    string          `json:"currency"`
@@ -22,7 +21,6 @@ type OrderSummary struct {
 // NewOrderSummary 从 models.Order 构造 OrderSummary
 func NewOrderSummary(o *models.Order) OrderSummary {
 	s := OrderSummary{
-		ID:          o.ID,
 		OrderNo:     o.OrderNo,
 		Status:      o.Status,
 		Currency:    o.Currency,
@@ -50,9 +48,7 @@ func NewOrderSummaryList(orders []models.Order) []OrderSummary {
 
 // OrderDetail 订单详情响应（完整字段）
 type OrderDetail struct {
-	ID                      uint             `json:"id"`
 	OrderNo                 string           `json:"order_no"`
-	ParentID                *uint            `json:"parent_id,omitempty"`
 	GuestEmail              string           `json:"guest_email,omitempty"`
 	GuestLocale             string           `json:"guest_locale,omitempty"`
 	Status                  string           `json:"status"`
@@ -78,9 +74,7 @@ type OrderDetail struct {
 // 内部自动处理 upstream 类型伪装和成本价清除。
 func NewOrderDetail(o *models.Order) OrderDetail {
 	d := OrderDetail{
-		ID:                      o.ID,
 		OrderNo:                 o.OrderNo,
-		ParentID:                o.ParentID,
 		GuestEmail:              o.GuestEmail,
 		GuestLocale:             o.GuestLocale,
 		Status:                  o.Status,
@@ -129,7 +123,6 @@ func truncateFulfillment(d *OrderDetail) {
 
 // OrderItemResp 订单项响应
 type OrderItemResp struct {
-	ID                       uint               `json:"id"`
 	Title                    models.JSON        `json:"title"`
 	SKUSnapshot              models.JSON        `json:"sku_snapshot"`
 	Tags                     models.StringArray `json:"tags"`
@@ -150,7 +143,6 @@ func newOrderItemResp(item *models.OrderItem) OrderItemResp {
 		ft = "manual"
 	}
 	return OrderItemResp{
-		ID:                       item.ID,
 		Title:                    item.TitleJSON,
 		SKUSnapshot:              item.SKUSnapshotJSON,
 		Tags:                     item.Tags,
@@ -169,7 +161,6 @@ func newOrderItemResp(item *models.OrderItem) OrderItemResp {
 
 // FulfillmentResp 交付记录响应
 type FulfillmentResp struct {
-	ID               uint        `json:"id"`
 	Type             string      `json:"type"`
 	Status           string      `json:"status"`
 	Payload          string      `json:"payload"`
@@ -184,7 +175,6 @@ func newFulfillmentResp(f *models.Fulfillment) FulfillmentResp {
 		typ = "manual"
 	}
 	return FulfillmentResp{
-		ID:               f.ID,
 		Type:             typ,
 		Status:           f.Status,
 		Payload:          f.Payload,

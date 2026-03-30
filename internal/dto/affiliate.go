@@ -28,7 +28,6 @@ func NewAffiliateProfileResp(p *models.AffiliateProfile) AffiliateProfileResp {
 // AffiliateCommissionResp 佣金记录响应
 type AffiliateCommissionResp struct {
 	ID               uint         `json:"id"`
-	OrderID          uint         `json:"order_id"`
 	CommissionType   string       `json:"commission_type"`
 	CommissionAmount models.Money `json:"commission_amount"`
 	Status           string       `json:"status"`
@@ -41,7 +40,6 @@ type AffiliateCommissionResp struct {
 func NewAffiliateCommissionResp(c *models.AffiliateCommission) AffiliateCommissionResp {
 	return AffiliateCommissionResp{
 		ID:               c.ID,
-		OrderID:          c.OrderID,
 		CommissionType:   c.CommissionType,
 		CommissionAmount: c.CommissionAmount,
 		Status:           c.Status,

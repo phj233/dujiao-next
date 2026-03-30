@@ -947,35 +947,6 @@ func (h *Handler) ListGuestOrders(c *gin.Context) {
 	response.SuccessWithPage(c, dto.NewOrderSummaryList(orders), pagination)
 }
 
-// GetGuestOrder 获取游客订单详情
-func (h *Handler) GetGuestOrder(c *gin.Context) {
-	email := strings.TrimSpace(c.Query("email"))
-	password := strings.TrimSpace(c.Query("order_password"))
-	if email == "" {
-		shared.RespondError(c, response.CodeBadRequest, "error.guest_email_required", nil)
-		return
-	}
-	if password == "" {
-		shared.RespondError(c, response.CodeBadRequest, "error.guest_password_required", nil)
-		return
-	}
-	orderID, err := shared.ParseParamUint(c, "id")
-	if err != nil {
-		shared.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
-		return
-	}
-	order, err := h.OrderService.GetOrderByGuest(orderID, email, password)
-	if err != nil {
-		if errors.Is(err, service.ErrGuestOrderNotFound) {
-			shared.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
-			return
-		}
-		shared.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
-		return
-	}
-	response.Success(c, dto.NewOrderDetailTruncated(order))
-}
-
 // GetGuestOrderByOrderNo 按订单号获取游客订单详情
 func (h *Handler) GetGuestOrderByOrderNo(c *gin.Context) {
 	email := strings.TrimSpace(c.Query("email"))
@@ -1006,7 +977,7 @@ func (h *Handler) GetGuestOrderByOrderNo(c *gin.Context) {
 }
 
 // DownloadGuestFulfillment 下载订单交付内容（游客）
-// 支持传入父订单 ID 或子订单 ID
+// 支持父订单或子订单的 order_no
 func (h *Handler) DownloadGuestFulfillment(c *gin.Context) {
 	email := strings.TrimSpace(c.Query("email"))
 	password := strings.TrimSpace(c.Query("order_password"))
@@ -1014,21 +985,19 @@ func (h *Handler) DownloadGuestFulfillment(c *gin.Context) {
 		shared.RespondError(c, response.CodeBadRequest, "error.guest_email_required", nil)
 		return
 	}
-	orderID, err := shared.ParseParamUint(c, "id")
-	if err != nil {
+	orderNo := strings.TrimSpace(c.Param("order_no"))
+	if orderNo == "" {
 		shared.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
 		return
 	}
-	// 先按父订单查找
-	order, err := h.OrderService.GetOrderByGuest(orderID, email, password)
-	if err != nil || order == nil {
-		// 可能是子订单 ID，通过 repo 直接查找并验证游客身份
-		raw, rawErr := h.OrderRepo.GetByID(orderID)
-		if rawErr != nil || raw == nil || raw.GuestEmail != email || raw.GuestPassword != password {
-			shared.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
-			return
-		}
-		order = raw
+	order, err := h.OrderRepo.GetAnyByOrderNoAndGuest(orderNo, email, password)
+	if err != nil {
+		shared.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
+		return
+	}
+	if order == nil {
+		shared.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
+		return
 	}
 	respondFulfillmentDownload(c, order)
 }
@@ -1037,14 +1006,14 @@ func (h *Handler) DownloadGuestFulfillment(c *gin.Context) {
 type CreateGuestPaymentRequest struct {
 	Email         string `json:"email" binding:"required"`
 	OrderPassword string `json:"order_password" binding:"required"`
-	OrderID       uint   `json:"order_id" binding:"required"`
+	OrderNo       string `json:"order_no" binding:"required"`
 	ChannelID     uint   `json:"channel_id" binding:"required"`
 }
 
 type LatestGuestPaymentQuery struct {
 	Email         string `form:"email" binding:"required"`
 	OrderPassword string `form:"order_password" binding:"required"`
-	OrderID       uint   `form:"order_id" binding:"required"`
+	OrderNo       string `form:"order_no" binding:"required"`
 }
 
 // CreateGuestPayment 游客发起支付
@@ -1064,7 +1033,8 @@ func (h *Handler) CreateGuestPayment(c *gin.Context) {
 		shared.RespondError(c, response.CodeBadRequest, "error.guest_password_required", nil)
 		return
 	}
-	if _, err := h.OrderService.GetOrderByGuest(req.OrderID, email, password); err != nil {
+	guestOrder, err := h.OrderService.GetOrderByGuestOrderNo(req.OrderNo, email, password)
+	if err != nil {
 		if errors.Is(err, service.ErrGuestOrderNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
 			return
@@ -1073,7 +1043,7 @@ func (h *Handler) CreateGuestPayment(c *gin.Context) {
 		return
 	}
 	result, err := h.PaymentService.CreatePayment(service.CreatePaymentInput{
-		OrderID:    req.OrderID,
+		OrderID:    guestOrder.ID,
 		ChannelID:  req.ChannelID,
 		UseBalance: false,
 		ClientIP:   c.ClientIP(),
@@ -1183,7 +1153,7 @@ func (h *Handler) GetGuestLatestPayment(c *gin.Context) {
 		return
 	}
 
-	order, err := h.OrderService.GetOrderByGuest(query.OrderID, email, password)
+	order, err := h.OrderService.GetOrderByGuestOrderNo(query.OrderNo, email, password)
 	if err != nil {
 		if errors.Is(err, service.ErrGuestOrderNotFound) {
 			shared.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
@@ -1217,7 +1187,7 @@ func (h *Handler) GetGuestLatestPayment(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"payment_id":       payment.ID,
-		"order_id":         payment.OrderID,
+		"order_no":         order.OrderNo,
 		"channel_id":       payment.ChannelID,
 		"channel_name":     payment.ChannelName,
 		"provider_type":    payment.ProviderType,

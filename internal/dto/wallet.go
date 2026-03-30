@@ -21,7 +21,6 @@ func NewWalletAccountResp(a *models.WalletAccount) WalletAccountResp {
 // WalletTransactionResp 钱包流水响应
 type WalletTransactionResp struct {
 	ID           uint         `json:"id"`
-	OrderID      *uint        `json:"order_id,omitempty"`
 	Type         string       `json:"type"`
 	Direction    string       `json:"direction"`
 	Amount       models.Money `json:"amount"`
@@ -34,7 +33,6 @@ type WalletTransactionResp struct {
 func NewWalletTransactionResp(t *models.WalletTransaction) WalletTransactionResp {
 	return WalletTransactionResp{
 		ID:           t.ID,
-		OrderID:      t.OrderID,
 		Type:         t.Type,
 		Direction:    t.Direction,
 		Amount:       t.Amount,
