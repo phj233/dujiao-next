@@ -11,7 +11,7 @@ type ApiCredential struct {
 	ID           uint           `gorm:"primarykey" json:"id"`
 	UserID       uint           `gorm:"uniqueIndex;not null" json:"user_id"`
 	ApiKey       string         `gorm:"type:varchar(64);uniqueIndex" json:"api_key"`
-	ApiSecret    string         `gorm:"type:varchar(128)" json:"-"`
+	ApiSecret    string         `gorm:"type:varchar(256)" json:"-"`
 	Status       string         `gorm:"type:varchar(20);not null;default:'pending_review'" json:"status"`
 	RejectReason string         `gorm:"type:varchar(500)" json:"reject_reason,omitempty"`
 	ApprovedAt   *time.Time     `json:"approved_at,omitempty"`
