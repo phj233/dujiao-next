@@ -48,10 +48,11 @@ func GetRetryAfter(err error) int64 {
 
 // RiskCheckInput 风控检查输入
 type RiskCheckInput struct {
-	UserID     uint
-	GuestEmail string
-	ClientIP   string
-	IsGuest    bool
+	UserID      uint
+	GuestEmail  string
+	ClientIP    string
+	IsGuest     bool
+	SkipIPCheck bool // 跳过 IP 维度检查（渠道/Bot 订单，因 ClientIP 为服务器 IP 会误杀）
 }
 
 // parsedIPBlacklist 缓存解析后的 IP 黑名单
@@ -94,8 +95,8 @@ func (s *OrderRiskControlService) CheckOrderAllowed(input RiskCheckInput) error 
 		return nil
 	}
 
-	// 1. IP 黑名单检查
-	if input.ClientIP != "" && len(cfg.IPBlacklist) > 0 {
+	// 1. IP 黑名单检查（跳过 IP 检查时不执行）
+	if !input.SkipIPCheck && input.ClientIP != "" && len(cfg.IPBlacklist) > 0 {
 		if s.isIPInBlacklist(input.ClientIP, cfg.IPBlacklist) {
 			return ErrRiskIPBlacklisted
 		}
@@ -138,8 +139,8 @@ func (s *OrderRiskControlService) checkPendingOrderLimits(input RiskCheckInput, 
 		}
 	}
 
-	// IP 维度
-	if input.ClientIP != "" && cfg.MaxPendingOrdersPerIP > 0 {
+	// IP 维度（跳过 IP 检查时不执行）
+	if !input.SkipIPCheck && input.ClientIP != "" && cfg.MaxPendingOrdersPerIP > 0 {
 		count, err := s.orderRepo.CountPendingByClientIP(input.ClientIP)
 		if err != nil {
 			logger.Warnw("risk_control_count_pending_by_ip_error", "ip", input.ClientIP, "error", err)
@@ -184,8 +185,8 @@ func (s *OrderRiskControlService) checkOrderRateLimit(input RiskCheckInput, rl O
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	// IP 维度频率限制（所有请求都检查）
-	if input.ClientIP != "" {
+	// IP 维度频率限制（跳过 IP 检查时不执行）
+	if !input.SkipIPCheck && input.ClientIP != "" {
 		if err := s.checkSingleRateLimit(ctx, client,
 			fmt.Sprintf("dj:risk:order_rate:ip:%s", input.ClientIP), rl); err != nil {
 			return err

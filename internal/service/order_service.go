@@ -88,6 +88,8 @@ type CreateOrderInput struct {
 	AffiliateVisitorKey string
 	ClientIP            string
 	ManualFormData      map[string]models.JSON
+	SkipRiskControl     bool // 完全跳过风控（下游订单）
+	SkipIPRiskControl   bool // 跳过 IP 维度风控（渠道/Bot 订单）
 }
 
 // CreateGuestOrderInput 游客创建订单输入
@@ -159,6 +161,8 @@ func (s *OrderService) CreateOrder(input CreateOrderInput) (*models.Order, error
 		AffiliateVisitorKey: input.AffiliateVisitorKey,
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
+		SkipRiskControl:     input.SkipRiskControl,
+		SkipIPRiskControl:   input.SkipIPRiskControl,
 	})
 }
 
@@ -200,6 +204,8 @@ type orderCreateParams struct {
 	ClientIP            string
 	IsGuest             bool
 	ManualFormData      map[string]models.JSON
+	SkipRiskControl     bool
+	SkipIPRiskControl   bool
 }
 
 // OrderPreview 订单金额预览
@@ -315,12 +321,13 @@ func (s *OrderService) createOrder(input orderCreateParams) (*models.Order, erro
 	}
 
 	// 风控检查（在锁库存之前）
-	if s.riskControlSvc != nil {
+	if s.riskControlSvc != nil && !input.SkipRiskControl {
 		if err := s.riskControlSvc.CheckOrderAllowed(RiskCheckInput{
-			UserID:     input.UserID,
-			GuestEmail: input.GuestEmail,
-			ClientIP:   input.ClientIP,
-			IsGuest:    input.IsGuest,
+			UserID:      input.UserID,
+			GuestEmail:  input.GuestEmail,
+			ClientIP:    input.ClientIP,
+			IsGuest:     input.IsGuest,
+			SkipIPCheck: input.SkipIPRiskControl,
 		}); err != nil {
 			return nil, err
 		}

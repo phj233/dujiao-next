@@ -368,7 +368,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		}
 	}
 
-	// 创建订单
+	// 创建订单（下游订单跳过风控：已通过 API 签名认证，自动钱包扣款，不存在占库存问题）
 	input := service.CreateOrderInput{
 		UserID: userID,
 		Items: []service.CreateOrderItem{
@@ -379,8 +379,9 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 				FulfillmentType: product.FulfillmentType,
 			},
 		},
-		ClientIP:       c.ClientIP(),
-		ManualFormData: manualFormData,
+		ClientIP:        c.ClientIP(),
+		ManualFormData:  manualFormData,
+		SkipRiskControl: true,
 	}
 
 	order, err := h.OrderService.CreateOrder(input)

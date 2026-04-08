@@ -178,6 +178,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		AffiliateVisitorKey: req.AffiliateKey,
 		ClientIP:            c.ClientIP(),
 		ManualFormData:      req.ManualFormData,
+		SkipIPRiskControl:   true, // Bot 服务器 IP 共用，跳过 IP 维度风控避免误杀
 	})
 	if err != nil {
 		logger.Errorw("channel_order_create", "user_id", userID, "error", err)

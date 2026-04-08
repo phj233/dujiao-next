@@ -350,6 +350,45 @@ func TestCheckOrderAllowed_PendingOrderLimits(t *testing.T) {
 	}
 }
 
+func TestCheckOrderAllowed_SkipIPCheck(t *testing.T) {
+	cfg := models.JSON{
+		"enabled":                     true,
+		"max_pending_orders_per_user": float64(5),
+		"max_pending_orders_per_ip":   float64(1),
+		"ip_blacklist":                []interface{}{"1.2.3.4"},
+	}
+
+	// IP 在黑名单中，但 SkipIPCheck=true 应放行
+	svc := newTestRiskControlService(0, 0, 0, cfg)
+	if err := svc.CheckOrderAllowed(RiskCheckInput{
+		UserID:      1,
+		ClientIP:    "1.2.3.4",
+		SkipIPCheck: true,
+	}); err != nil {
+		t.Fatalf("expected nil with SkipIPCheck, got %v", err)
+	}
+
+	// IP 并发超限，但 SkipIPCheck=true 应放行
+	svc = newTestRiskControlService(0, 999, 0, cfg)
+	if err := svc.CheckOrderAllowed(RiskCheckInput{
+		UserID:      1,
+		ClientIP:    "5.6.7.8",
+		SkipIPCheck: true,
+	}); err != nil {
+		t.Fatalf("expected nil with SkipIPCheck for IP pending, got %v", err)
+	}
+
+	// 用户维度超限，SkipIPCheck=true 不影响，仍应拦截
+	svc = newTestRiskControlService(5, 0, 0, cfg)
+	if err := svc.CheckOrderAllowed(RiskCheckInput{
+		UserID:      1,
+		ClientIP:    "5.6.7.8",
+		SkipIPCheck: true,
+	}); err != ErrRiskTooManyPendingOrders {
+		t.Fatalf("expected ErrRiskTooManyPendingOrders for user limit with SkipIPCheck, got %v", err)
+	}
+}
+
 func TestCheckOrderAllowed_ZeroLimitMeansNoLimit(t *testing.T) {
 	svc := newTestRiskControlService(999, 999, 999, models.JSON{
 		"enabled":                            true,
